@@ -30,6 +30,10 @@ def test_scenarios_endpoints():
     assert data["specialty"] == "Emergency Cardiology"
 
 
+def test_unknown_scenario_returns_not_found():
+    assert client.get("/api/scenarios/not-a-scenario").status_code == 404
+
+
 def test_triage_message_endpoint():
     payload = {
         "encounter_id": "ENC-TEST-API-01",

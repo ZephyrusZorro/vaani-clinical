@@ -1,0 +1,263 @@
+/* Pearl: calm surfaces, precise typography, and a restrained clinical accent. */
+:root {
+  color-scheme: light;
+  --bg-deep: #edf2ef;
+  --bg-surface: #f7faf8;
+  --bg-surface-elevated: #fff;
+  --bg-card: #f3f6f4;
+  --bg-card-hover: #eaf1ed;
+  --border-subtle: rgba(35, 66, 54, .12);
+  --border-hover: rgba(31, 103, 81, .3);
+  --border-active: #24765e;
+  --text-primary: #213b30;
+  --text-secondary: #5c7065;
+  --text-muted: #64776c;
+  --text-dim: #6b7b72;
+  --clinical-cyan: #23735b;
+  --clinical-blue: #2f6c82;
+  --clinical-emerald: #24765e;
+  --clinical-amber: #946119;
+  --clinical-rose: #b03e4b;
+  --clinical-purple: #75618d;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --shadow-card: 0 8px 32px -20px rgba(39, 65, 51, .22), inset 0 1px 0 rgba(255,255,255,.9);
+  --shadow-glow-cyan: none;
+  --shadow-glow-emerald: none;
+  --shadow-glow-rose: none;
+  --font-main: "Segoe UI", -apple-system, sans-serif;
+  --font-digital: var(--font-code);
+}
+html { scroll-behavior: smooth; }
+body {
+  background: radial-gradient(ellipse at 88% 8%, #dcebe1 0, transparent 40%), radial-gradient(ellipse at 6% 62%, #e7ece2 0, transparent 40%), #edf2ef;
+  background-attachment: fixed;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; }
+button { transition: background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+button:not(:disabled) { cursor: pointer; }
+button:disabled { opacity: .5; cursor: wait; }
+:focus-visible { outline: 2px solid #24765e; outline-offset: 4px; }
+::selection { background: #c7e4d6; color: #173d2e; }
+.skip-link { position: fixed; left: 20px; top: -80px; z-index: 20000; padding: 12px 20px; background: #213b30; color: #fff; border-radius: 12px; }
+.skip-link:focus { top: 12px; }
+.hospital-header {
+  height: 84px; padding: 0 max(32px, calc((100vw - 1536px) / 2));
+  background: rgba(250,253,250,.7); border-color: rgba(48,74,55,.09);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); gap: 28px;
+}
+.brand-suite { text-decoration: none; color: inherit; gap: 12px; flex-shrink: 0; }
+.brand-pulse-icon { width: 42px; height: 42px; border: 1px solid #295b47; border-radius: 14px; background: #254e3d; color: #edf7ee; box-shadow: 0 4px 12px #254e3d18; }
+.brand-pulse-icon svg { width: 30px; height: 30px; }
+.brand-title { color: #213b30; font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -1.2px; line-height: 1.1; gap: 9px; }
+.brand-title span.hindi-title { color: #688171; font-size: 12px; font-weight: 500; background: none; padding: 0; letter-spacing: 0; }
+.brand-subtitle { font-size: 10px; color: #64776c; letter-spacing: .04em; margin-top: 4px; }
+.header-location { margin-right: auto; border-left: 1px solid #d5dfd7; padding-left: 28px; font-size: 12px; color: #314e3d; display: flex; gap: 16px; }
+.header-location > span:first-child, .header-slash { color: #8b9990; }
+.clinician-status-badge { gap: 18px; }
+.demo-badge { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #5c7065; }
+.trust-dot { background: #6a9b79; box-shadow: none; animation: none; width: 6px; height: 6px; flex-shrink: 0; }
+.clinician-avatar { background: #e3ebdf; border: 1px solid #ccd9c9; color: #446143; border-radius: 50%; width: 34px; height: 34px; font-size: 11px; }
+.digital-time-clock { font-size: 10px; color: #78877c; background: none; border: 0; padding: 0; letter-spacing: 0; }
+.workspace-intro { display: flex; justify-content: space-between; align-items: center; padding: 38px 0 30px; width: min(100% - 64px, 1536px); margin-inline: auto; }
+.eyebrow, .section-kicker { font-size: 9px; letter-spacing: .16em; color: #6d8375; font-weight: 600; }
+.eyebrow { margin-bottom: 8px; }
+.eyebrow span { color: #9ba99e; margin-left: 9px; }
+h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(28px, 3vw, 40px); letter-spacing: -1.7px; font-weight: 500; color: #263f32; line-height: 1.2; }
+.title-period { color: #89aa89; }
+.workspace-intro p { font-size: 13px; color: #708175; margin-top: 9px; }
+.intro-action { border: 1px solid #c7d4c8; background: rgba(255,255,255,.5); color: #365541; border-radius: 100px; padding: 12px 18px; font-size: 12px; display: flex; align-items: center; gap: 28px; }
+.intro-action span { font-size: 18px; }
+.intro-action:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 5px 14px #2447330a; }
+.icu-telemetry-hub { width: min(100% - 64px, 1536px); margin: 0 auto; padding: 22px 24px; grid-template-columns: minmax(220px, .9fr) minmax(280px, 1.55fr) minmax(250px, .9fr); gap: 28px; background: rgba(255,255,255,.55); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid #ffffffc9; border-radius: 20px; box-shadow: var(--shadow-card); }
+.patient-identity-card { min-width: 0; gap: 7px; }
+.identity-header { flex-wrap: wrap; gap: 7px 12px; }
+.patient-name-display { color: var(--text-primary); font-size: 20px; font-weight: 600; letter-spacing: -.6px; }
+.patient-mrn-badge { background: #e6eee6; color: #55715a; border: 0; border-radius: 5px; font-size: 9px; }
+.patient-demographics-text { color: #758077; font-size: 11px; max-width: 280px; line-height: 1.7; }
+.ecg-monitor-frame { border: 1px solid #d9e5dc; border-radius: 12px; background: #0e231b; }
+#ecgCanvas { height: 60px; }
+.ecg-overlay-header { color: #9db9ab; font-size: 8px; gap: 14px; top: 8px; }
+.arrhythmia-bar { background: #f5f8f5; border-top-color: #d9e5dc; padding: 7px 8px; gap: 8px; flex-wrap: wrap; }
+.rhythm-pill { background: transparent; color: #6b7c70; border: 0; font-family: var(--font-main); font-size: 9px; padding: 3px 5px; border-radius: 4px; }
+.rhythm-pill:hover { background: #e7efe7; color: #294b37; }
+.rhythm-pill.active { color: #275a41; background: #dfebdf; border: 0; }
+.hr-slider-group { gap: 4px; margin-left: auto; }
+.hr-slider-group input[type=range] { width: 48px; }
+.vitals-meter-cluster { padding: 0; background: transparent; border: 0; gap: 12px; flex-wrap: wrap; }
+.vital-box { align-items: flex-start; gap: 4px; }
+.vital-box-label { font-family: var(--font-main); font-size: 9px; color: #819084; }
+.vital-box-value { font-family: 'Space Grotesk',sans-serif; font-size: 22px; font-weight: 500; letter-spacing: -.8px; color: var(--text-primary); }
+.product-suite-tabs { width: min(100% - 64px, 1536px); margin: 26px auto 0; background: transparent; padding: 0 0 10px; border-color: #d5dfd5; gap: 6px; flex-shrink: 0; }
+.suite-tab-btn { padding: 10px 20px; border-radius: 100px; border: 1px solid transparent; gap: 9px; font-size: 12px; font-weight: 500; color: #7c8a7f; }
+.suite-tab-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.suite-tab-btn:hover { color: #294b37; background: #ffffff70; }
+.suite-tab-btn.active { color: #fff; background: #2d503d; border-color: #2d503d; box-shadow: 0 3px 10px #2d503d12; font-weight: 500; }
+.suite-viewport { width: min(100% - 64px, 1536px); margin: 0 auto; padding: 24px 0 0; }
+.suite-panel.active { animation: pearl-enter .3s ease both; }
+@keyframes pearl-enter { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+.glass-panel { background: rgba(255,255,255,.68); border: 1px solid rgba(255,255,255,.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: var(--shadow-card); }
+.triage-workspace-grid { grid-template-columns: minmax(0,1fr) 320px; gap: 22px; min-height: 590px; align-items: start; }
+.telephony-card { min-height: 630px; }
+.telephony-header { padding: 18px 22px; background: transparent; gap: 15px; flex-wrap: wrap; border-color: #e3eae2; }
+.call-badge-live { color: #7e8e81; font-family: var(--font-main); font-size: 9px; letter-spacing: .04em; min-width: 0; }
+#currentEncounterId { color: #3d5a44 !important; font-family: var(--font-code); font-size: 9px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.softphone-controls { gap: 6px; flex-wrap: wrap; }
+.btn-action { font-family: var(--font-main); font-size: 10px; font-weight: 500; padding: 8px 11px; border-radius: 8px; border-color: #dce5dc; background: #f5f8f4; color: #58705b; min-height: 32px; }
+.btn-action > span:first-child:not(:last-child) { font-size: 10px; }
+.btn-action:hover { color: #284d37; background: #e8f0e6; border-color: #acc6af; transform: translateY(-1px); }
+.chat-transcript-area { padding: 30px 28px; min-height: 360px; max-height: 500px; background: transparent; gap: 24px; }
+.message-bubble-row { max-width: 87%; }
+.bubble-meta { color: #7b8d7e; font-family: var(--font-main); font-size: 9px; letter-spacing: .08em; margin-bottom: 8px; }
+.bubble-text { font-size: 14px; line-height: 1.8; padding: 18px 20px; border-radius: 0 16px 16px 16px; box-shadow: none; overflow-wrap: anywhere; }
+.message-bubble-row.agent .bubble-text { background: #eff4ed; border: 1px solid #e0eadd; color: #49604b; }
+.message-bubble-row.patient .bubble-text { background: #365c46; border-color: #365c46; color: #fff; border-radius: 16px 0 16px 16px; }
+.message-bubble-row.patient .bubble-meta { color: #6d8271; }
+.bubble-tts-bar { border-color: #d7e1d4; color: #6d8271; font-family: var(--font-main); font-size: 10px; }
+.btn-revoice { color: #3e6649; background: #e2ebdd; border-color: #c8dac4; }
+.spectral-bar { margin-top: auto; background: #f7f9f5; border-color: #e4ebe0; padding: 9px 22px; }
+.telephony-input-dock { padding: 18px 22px; background: transparent; gap: 10px; border-color: #e4ebe0; }
+.triage-input-field { background: #fff; color: #314e39; border-color: #dce6d9; border-radius: 11px; padding: 14px 16px; font-size: 12px; min-width: 0; }
+.triage-input-field::placeholder { color: #8a998b; }
+.btn-triage-send { background: #31563f; color: #fff; box-shadow: none; border: 1px solid #31563f; border-radius: 11px; padding: 12px 20px; font-family: var(--font-main); font-size: 11px; white-space: nowrap; }
+.btn-triage-send:hover { background: #24442f; box-shadow: 0 4px 12px #31563f20; transform: translateY(-1px); }
+.telemetry-sidebar-col { gap: 18px; min-width: 0; }
+.triage-hud-card { padding: 20px; }
+.hud-card-title { font-family: var(--font-main); font-size: 11px; font-weight: 600; letter-spacing: 0; color: #516b55; padding-bottom: 12px; margin-bottom: 10px; border-color: #e0e9dc; gap: 10px; }
+.hud-card-title > span:last-child:not(:first-child) { font-size: 8px !important; letter-spacing: .06em; }
+.esi-level-box { background: #f3f6f0; border-color: #e2e9dd; border-radius: 12px; padding: 18px 14px; }
+.esi-tag { box-shadow: none; border-radius: 6px; padding: 5px 10px; font-family: var(--font-main); font-size: 12px; letter-spacing: 0; }
+.esi-disposition-summary { font-size: 11px; color: #778873; line-height: 1.7; }
+.oldcarts-card-grid { gap: 8px; }
+.oldcarts-slot { background: #f1f5ed; border: 0; border-radius: 8px; padding: 11px 12px; }
+.oldcarts-slot-label { color: #6e866a; font-family: var(--font-main); font-size: 8px; letter-spacing: .04em; }
+.oldcarts-slot-value { color: #354f38; font-size: 11px; }
+.oldcarts-slot-value.empty { color: #8c9c85; font-style: normal; }
+.diff-card { background: #f3f6ef; border-color: #e6ecdf; border-radius: 10px; padding: 14px; }
+.diff-card-head { color: var(--text-primary); font-size: 11px; }
+.diff-meta-desc { font-size: 11px; line-height: 1.6; }
+.diff-icd-chip { background: #e3eddf; font-size: 9px; }
+.pathology-suite-grid { grid-template-columns: 340px minmax(0,1fr); gap: 22px; }
+.lab-intake-textarea, .calc-form-control { background: #f6f8f3; color: var(--text-primary); border-color: #dce5d5; border-radius: 10px; }
+.biomarker-cards-grid { grid-template-columns: repeat(auto-fill,minmax(250px,1fr)); }
+.bio-gauge-card { background: #f8faf5; border-color: #e1e8da; box-shadow: none; }
+.bio-test-title, .bio-measured-num, .calc-name, .case-card-title { color: var(--text-primary); }
+.bio-interp-text { color: var(--text-secondary); }
+.gauge-pointer-needle { background: #243e2b; box-shadow: 0 0 0 2px #fff; }
+.calc-result-summary { background: #f0f5ea; border-color: #dae5d1; }
+.calculator-header { gap: 12px; flex-wrap: wrap; }
+.safety-decision-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px; }
+.ehr-scribe-grid { grid-template-columns: minmax(0,1fr) 320px; gap: 22px; }
+.soap-toolbar-bar { background: transparent; border-color: #e2eadd; flex-wrap: wrap; gap: 14px; padding: 20px; }
+.soap-toolbar-bar > div { flex-wrap: wrap; }
+.soap-rendered-markdown { color: var(--text-primary); background: transparent; padding: 28px; line-height: 1.9; }
+.soap-rendered-markdown h1, .soap-rendered-markdown h2, .soap-rendered-markdown h3, .soap-rendered-markdown h4 { color: #31583d; font-family: var(--font-main); letter-spacing: -.3px; margin: 18px 0 10px; }
+.soap-rendered-markdown p { margin-bottom: 10px; }
+.evidence-card-item { background: #f2f6ee; border-color: #e1e9d9; border-radius: 10px; }
+#fhirCodeView { color: #516e52 !important; background: #f0f5eb !important; overflow: auto; }
+.scenarios-card-grid { grid-template-columns: repeat(auto-fit,minmax(270px,1fr)); gap: 20px; }
+.case-card { background: rgba(255,255,255,.7); border: 1px solid #fff; border-radius: 18px; padding: 24px; box-shadow: var(--shadow-card); }
+.case-card:hover { border-color: #b2c8aa; box-shadow: 0 10px 24px #365c4610; }
+.redflag-banner { background: #fff0ef; border-color: #dfb4b3; color: #923c42; flex-wrap: wrap; }
+.btn-code-red { background: #9e424a; box-shadow: none; font-family: var(--font-main); border-radius: 8px; font-size: 10px; }
+.workspace-footer { width: min(100% - 64px,1536px); margin: 28px auto 0; padding: 18px 0 24px; border-top: 1px solid #d5dfd5; display: flex; justify-content: space-between; gap: 20px; color: #8b9988; font-size: 10px; }
+.workspace-footer > span:first-child { color: #5d775a; }
+.workspace-footer > span:first-child span { margin: 0 10px; color: #a8b5a1; }
+.clinical-modal-backdrop { background: #203d3070; backdrop-filter: blur(12px); }
+.clinical-modal-backdrop.active { animation: pearl-enter .2s ease; }
+.clinical-modal-window { box-shadow: 0 30px 100px #203d3040; border-radius: 20px; }
+.modal-window-header { background: #2d503d; font-family: var(--font-main); font-size: 11px; }
+.dtmf-key { background: #eef4e9; color: #31563f; border-color: #d8e3cf; }
+@media (min-width:1600px) { .hospital-header { padding-inline: max(40px,calc((100vw - 1536px) / 2)); } }
+@media (max-width:1200px) {
+  .icu-telemetry-hub { grid-template-columns: 1fr 1.5fr; gap: 20px; }
+  .vitals-meter-cluster { grid-column: 1 / -1; justify-content: space-between; border-top: 1px solid #dce5d7; padding-top: 14px; }
+  .vital-box { flex-direction: row; align-items: baseline; gap: 12px; }
+  .triage-workspace-grid, .ehr-scribe-grid { grid-template-columns: minmax(0,1fr) 280px; gap: 16px; }
+  .softphone-controls { width: 100%; }
+  .header-location { display: none; }
+  .brand-suite { margin-right: auto; }
+}
+@media (max-width:850px) {
+  .hospital-header { height: 72px; padding-inline: 20px; }
+  .digital-time-clock { display: none; }
+  .workspace-intro, .icu-telemetry-hub, .product-suite-tabs, .suite-viewport, .workspace-footer { width: calc(100% - 40px); }
+  .triage-workspace-grid, .ehr-scribe-grid, .pathology-suite-grid, .safety-decision-grid { grid-template-columns: minmax(0,1fr); }
+  .telemetry-sidebar-col { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .telemetry-sidebar-col > :last-child { grid-column: 1 / -1; }
+  .telephony-card { min-height: 520px; }
+  .chat-transcript-area { min-height: 250px; }
+  .evidence-audit-col { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .suite-tab-btn { padding: 10px 14px; }
+}
+@media (max-width:560px) {
+  .hospital-header { padding-inline: 16px; gap: 10px; }
+  .brand-title { font-size: 26px; }
+  .brand-subtitle { font-size: 9px; }
+  .brand-pulse-icon { width: 38px; height: 38px; }
+  .demo-badge { font-size: 9px; gap: 5px; max-width: 95px; line-height: 1.4; }
+  .clinician-status-badge { gap: 10px; }
+  .clinician-avatar { display: none; }
+  .workspace-intro, .icu-telemetry-hub, .product-suite-tabs, .suite-viewport, .workspace-footer { width: calc(100% - 32px); }
+  .workspace-intro { padding: 28px 0 24px; align-items: flex-start; gap: 10px; }
+  .workspace-intro p { max-width: 230px; font-size: 11px; }
+  .eyebrow { font-size: 8px; }
+  .intro-action { padding: 8px 10px; border-radius: 9px; font-size: 9px; gap: 8px; max-width: 102px; text-align: left; }
+  .intro-action span { font-size: 15px; }
+  .icu-telemetry-hub { grid-template-columns: minmax(0,1fr); padding: 20px; gap: 18px; }
+  .vitals-meter-cluster { grid-column: auto; gap: 14px; flex-wrap: nowrap; }
+  .vital-box { flex-direction: column; gap: 3px; }
+  .vital-box-value { font-size: 20px; }
+  .vital-box-label { font-size: 8px; }
+  .arrhythmia-bar { gap: 6px; }
+  .hr-slider-group { width: 100%; justify-content: flex-end; }
+  .product-suite-tabs { margin-top: 20px; gap: 2px; }
+  .suite-tab-btn { font-size: 11px; padding: 10px 12px; flex-shrink: 0; }
+  .suite-viewport { padding-top: 18px; }
+  .telephony-header { padding: 16px; }
+  .btn-action { padding: 8px; font-size: 10px; }
+  .chat-transcript-area { padding: 24px 16px; }
+  .message-bubble-row { max-width: 96%; }
+  .bubble-text { padding: 14px 16px; font-size: 13px; }
+  .telephony-input-dock { padding: 14px; flex-wrap: wrap; }
+  .triage-input-field { flex: 1 1 100%; }
+  .btn-triage-send { width: 100%; }
+  .telemetry-sidebar-col, .evidence-audit-col { display: flex; flex-direction: column; }
+  .bio-card-top, .bio-value-row, .calc-score-row { flex-wrap: wrap; gap: 8px; }
+  .scenarios-card-grid { grid-template-columns: minmax(0,1fr); }
+  .rx-safety-full-panel > div[style] { flex-wrap: wrap; }
+  .rx-safety-full-panel > div[style] > div { min-width: 100%; }
+  .workspace-footer { flex-direction: column; gap: 6px; font-size: 9px; }
+  .clinical-modal-backdrop { padding: 12px; }
+  .modal-window-body { padding: 14px; }
+  .spectral-bar { padding-inline: 14px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+@media print {
+  body { background: white; }
+  body > :not(#chartModalOverlay) { display: none !important; }
+  #chartModalOverlay { position: static; display: block; background: none; padding: 0; }
+  .clinical-modal-window { display: block; width: 100%; max-width: none; max-height: none; box-shadow: none; overflow: visible; }
+  .modal-window-header, .modal-window-footer { display: none; }
+  .modal-window-body { overflow: visible; padding: 0; }
+}
+
+.message-bubble-row.agent { align-self: flex-start; }
+.message-bubble-row.patient { align-self: flex-end; }
+#currentEncounterId { display: inline-block; vertical-align: middle; }
+
+.app-notice { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: min(600px, calc(100% - 32px)); display: flex; align-items: center; gap: 20px; background: #294c3bf5; color: #f4f9f1; border: 1px solid #7f9b7f66; border-radius: 14px; padding: 16px 20px; box-shadow: 0 10px 40px #294c3b30; z-index: 20000; font-size: 12px; backdrop-filter: blur(16px); }
+.app-notice[hidden] { display: none; }
+.app-notice button { background: none; border: 0; color: #d8e8d0; font-size: 20px; margin-left: auto; }
+
+@media (max-width:560px) {
+  .softphone-controls .btn-action { min-height: 38px; }
+  .suite-tab-btn { min-height: 42px; }
+}

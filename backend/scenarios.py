@@ -156,8 +156,8 @@ def get_all_scenarios() -> List[ClinicalScenario]:
     return CLINICAL_SCENARIOS
 
 
-def get_scenario_by_id(scenario_id: str) -> ClinicalScenario:
+def get_scenario_by_id(scenario_id: str) -> ClinicalScenario | None:
     for s in CLINICAL_SCENARIOS:
         if s.id == scenario_id:
             return s
-    return CLINICAL_SCENARIOS[0]
+    return None

@@ -5,9 +5,20 @@
  * Abridge Linked Evidence Grounding, and HL7 FHIR Release 4 Interoperability.
  */
 
+async function apiFetch(url, options) {
+  try {
+    const response = await window.fetch(url, options);
+    if (!response.ok) throw new Error(`Request failed (${response.status}). Review the input and try again.`);
+    return response;
+  } catch (error) {
+    showNotice(error.message || "Connection unavailable. Please try again.");
+    throw error;
+  }
+}
+
 // Application State
 const state = {
-  encounterId: "ENC-" + Math.floor(10000 + Math.random() * 90000),
+  encounterId: "ENC-" + crypto.randomUUID(),
   patientProfile: {
     name: "Robert Vance",
     age: 62,
@@ -21,7 +32,9 @@ const state = {
   currentHPI: {},
   latestAssessment: null,
   extractedBiomarkers: [],
-  ttsActive: true,
+  ttsActive: false,
+  sendingEncounter: null,
+  revision: 0,
   lastSoapNote: null,
   lastFhirBundle: null,
   lastAvs: null,
@@ -175,7 +188,7 @@ function updatePatientHUD() {
   if (el.currentEncounterId) el.currentEncounterId.textContent = state.encounterId;
 
   const ageSex = `${state.patientProfile.age || 'Unspecified'} yo • ${state.patientProfile.biological_sex.toUpperCase()}`;
-  const allergies = state.patientProfile.allergies.length 
+  const allergies = state.patientProfile.allergies.length
     ? `Allergies: ${state.patientProfile.allergies.join(', ')}`
     : 'No known drug allergies';
   if (el.hudDemographics) el.hudDemographics.textContent = `${ageSex} • ${allergies}`;
@@ -465,6 +478,7 @@ function initSpeechRecognition() {
 
 function stopLiveMic() {
   state.isLiveMicActive = false;
+  state.analyserNode = null;
   el.liveMicBtn.classList.remove("active-pulse");
   el.micStatus.textContent = "LIVE MIC STT";
   if (state.micStream) {
@@ -478,6 +492,10 @@ async function startRealMicAnalyser() {
     const actx = getAudioContext();
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    if (!state.isLiveMicActive) {
+      stream.getTracks().forEach(track => track.stop());
+      return;
+    }
     state.micStream = stream;
 
     const source = actx.createMediaStreamSource(stream);
@@ -499,7 +517,7 @@ function initAudioVisualizer() {
   const ctx = canvas.getContext("2d");
 
   function resize() {
-    canvas.width = canvas.parentElement.clientWidth - 160;
+    canvas.width = Math.max(1, canvas.parentElement.clientWidth - 160);
     canvas.height = 22;
   }
   resize();
@@ -562,7 +580,7 @@ function speakText(text) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.05;
     utterance.pitch = 1.0;
-    
+
     const voices = window.speechSynthesis.getVoices();
     const preferredVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("Samantha")));
     if (preferredVoice) utterance.voice = preferredVoice;
@@ -582,11 +600,11 @@ function initEventHandlers() {
     state.ttsActive = !state.ttsActive;
     if (state.ttsActive) {
       el.ttsIcon.textContent = "🔊";
-      el.ttsStatus.textContent = "TTS: ACTIVE";
+      el.ttsStatus.textContent = "Audio on";
     } else {
-      window.speechSynthesis.cancel();
+      window.speechSynthesis?.cancel();
       el.ttsIcon.textContent = "🔇";
-      el.ttsStatus.textContent = "TTS: MUTED";
+      el.ttsStatus.textContent = "Audio off";
     }
   });
 
@@ -601,18 +619,13 @@ function initEventHandlers() {
 
   // Reset call button
   el.resetCallBtn.addEventListener("click", () => {
-    state.encounterId = "ENC-" + Math.floor(10000 + Math.random() * 90000);
-    state.dialogueHistory = [];
-    state.currentHPI = {};
-    state.latestAssessment = null;
-    state.extractedBiomarkers = [];
-    updatePatientHUD();
+    resetEncounter();
 
     el.dialogueStream.innerHTML = `
       <div class="message-bubble-row agent">
-        <div class="bubble-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
+        <div class="bubble-meta">Vaani · Intake assistant • INTAKE</div>
         <div class="bubble-text">
-          Hello, this is the Vaani Clinical Triage Service. I am an intelligent clinical receptionist. 
+          Welcome to Vaani. This is a simulated clinical intake.
           Please describe what symptoms or medical emergency you are experiencing today.
         </div>
       </div>
@@ -622,7 +635,7 @@ function initEventHandlers() {
 
   // Escalate 911 button
   el.escalate911Btn.addEventListener("click", () => {
-    alert(`🚨 CODE RED DISPATCH INITIATED 🚨\n\nEmergency dispatch protocol activated for Encounter ${state.encounterId}.\nPatient: ${state.patientProfile.name} (MRN: ${state.patientProfile.mrn})\nDisposition: Immediate Resuscitation / EMS 911 Ambulance Dispatched.`);
+    showNotice("Simulation only. No call has been placed and no ambulance has been dispatched. In a real emergency, contact your local emergency service directly.");
   });
 
   // SOAP Studio buttons
@@ -630,16 +643,16 @@ function initEventHandlers() {
   el.copySoapBtn.addEventListener("click", () => {
     if (state.lastSoapNote && state.lastSoapNote.markdown_formatted) {
       navigator.clipboard.writeText(state.lastSoapNote.markdown_formatted).then(() => {
-        alert("SOAP Note Markdown copied to clipboard!");
-      });
+        showNotice("SOAP Note Markdown copied to clipboard!");
+      }).catch(() => showNotice("Clipboard unavailable. Select and copy the note manually."));
     } else {
-      alert("Please synthesize a SOAP note first.");
+      showNotice("Please synthesize a SOAP note first.");
     }
   });
 
   // ScanUp Pathology Lab buttons
   el.pasteSampleLabBtn.addEventListener("click", () => {
-    el.labInputText.value = 
+    el.labInputText.value =
 `Comprehensive Clinical Lab Panel:
 Cardiac Troponin I: 1.45 ng/mL
 BNP: 420 pg/mL
@@ -656,7 +669,7 @@ White Blood Cell: 12.8 x10^3/uL`;
   el.extractLabBtn.addEventListener("click", () => {
     const raw = el.labInputText.value.trim();
     if (!raw) {
-      alert("Please enter or paste clinical lab text.");
+      showNotice("Please enter or paste clinical lab text.");
       return;
     }
     extractBiomarkersFromText(raw);
@@ -676,7 +689,7 @@ White Blood Cell: 12.8 x10^3/uL`;
   // FHIR Explorer buttons
   el.downloadFhirBtn.addEventListener("click", () => {
     if (!state.lastFhirBundle) {
-      alert("Compile FHIR bundle first.");
+      showNotice("Compile FHIR bundle first.");
       return;
     }
     const blob = new Blob([JSON.stringify(state.lastFhirBundle.raw_fhir_json, null, 2)], { type: "application/json" });
@@ -690,13 +703,66 @@ White Blood Cell: 12.8 x10^3/uL`;
 }
 
 
+
+// Treat generated clinical content as text, including in formatted reports.
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function renderMarkdown(text) {
+  return escapeHTML(text).split("\n").map(line => {
+    const heading = line.match(/^(#{1,4}) (.*)$/);
+    const body = (heading ? heading[2] : line).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    return heading ? `<h${heading[1].length}>${body}</h${heading[1].length}>` : `<p>${body || "&nbsp;"}</p>`;
+  }).join("");
+}
+function clearGeneratedRecords() {
+  state.lastSoapNote = null;
+  state.lastFhirBundle = null;
+  state.lastAvs = null;
+  el.soapRenderedContent.textContent = "Your encounter note will appear here after an intake.";
+  el.fhirCodeView.textContent = "No export generated for this encounter.";
+  el.evidenceListContainer.textContent = "Generate a note to review transcript evidence.";
+  el.evidenceScoreBadge.textContent = "Not audited";
+  el.printableChartBody.replaceChildren();
+  el.chartModalOverlay.classList.remove("active");
+}
+function resetEncounter(profile = state.patientProfile) {
+  state.encounterId = "ENC-" + crypto.randomUUID();
+  state.revision += 1;
+  state.patientProfile = profile;
+  state.dialogueHistory = [];
+  state.currentHPI = {};
+  state.latestAssessment = null;
+  state.extractedBiomarkers = [];
+  state.sendingEncounter = null;
+  window.speechSynthesis?.cancel();
+  state.speechRecognizer?.abort();
+  stopLiveMic();
+  clearGeneratedRecords();
+  el.labInputText.value = "";
+  el.bioOrganAlertCount.textContent = "No results";
+  el.rxAlertsList.textContent = "Run a medication check for this encounter.";
+  renderScanUpGauges([]);
+  resetTriageHUD();
+  updatePatientHUD();
+  const sendButton = el.chatForm.querySelector('button[type="submit"]');
+  if (sendButton) sendButton.disabled = false;
+}
+
 // --- SEND PATIENT MESSAGE TO BACKEND API ---
 async function sendPatientMessage(text) {
+  const encounterId = state.encounterId;
+  if (state.sendingEncounter === encounterId) return false;
+  state.sendingEncounter = encounterId;
+  state.revision += 1;
+  clearGeneratedRecords();
+  const sendButton = el.chatForm.querySelector('button[type="submit"]');
+  if (sendButton) sendButton.disabled = true;
   appendChatBubble("patient", text);
   pulseAudioVis(1200);
 
   try {
-    const response = await fetch("/api/triage/message", {
+    const response = await apiFetch("/api/triage/message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -708,6 +774,7 @@ async function sendPatientMessage(text) {
 
     if (!response.ok) throw new Error("API error: " + response.statusText);
     const data = await response.json();
+    if (state.encounterId !== encounterId) return false;
 
     appendChatBubble("agent", data.agent_reply, data.agent_speech_text);
     speakText(data.agent_speech_text);
@@ -717,10 +784,17 @@ async function sendPatientMessage(text) {
     if (data.extracted_biomarkers) state.extractedBiomarkers = data.extracted_biomarkers;
 
     updateTriageHUD(data);
+    return true;
 
   } catch (err) {
     console.error("Triage message failed:", err);
-    appendChatBubble("agent", "Error connecting to clinical triage server. Please verify backend service is running.");
+    if (state.encounterId === encounterId) appendChatBubble("agent", "Could not complete this intake. Please check the connection and try again.");
+    return false;
+  } finally {
+    if (state.sendingEncounter === encounterId) {
+      state.sendingEncounter = null;
+      if (sendButton) sendButton.disabled = false;
+    }
   }
 }
 
@@ -733,13 +807,14 @@ function appendChatBubble(role, content, speechText = null) {
 
   const meta = document.createElement("div");
   meta.className = "bubble-meta";
-  meta.textContent = role === "patient" 
+  meta.textContent = role === "patient"
     ? `${state.patientProfile.name.toUpperCase()} (CALLER)`
-    : "VAANI CLINICAL AI RECEPTIONIST";
+    : "Vaani · Intake assistant";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble-text";
-  bubble.innerHTML = content.replace(/\n/g, "<br>");
+  bubble.textContent = content;
+  bubble.style.whiteSpace = "pre-wrap";
 
   if (speechText) {
     const audioBar = document.createElement("div");
@@ -813,17 +888,17 @@ function updateTriageHUD(data) {
       card.className = "diff-card";
       card.innerHTML = `
         <div class="diff-card-head">
-          <span>${diff.condition_name}</span>
-          <span class="diff-icd-chip">${diff.icd10_code}</span>
+          <span>${escapeHTML(diff.condition_name)}</span>
+          <span class="diff-icd-chip">${escapeHTML(diff.icd10_code)}</span>
         </div>
         <div class="diff-prob-track">
           <div class="diff-prob-fill ${isHigh ? 'high' : ''}" style="width: ${probPct}%;"></div>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-code);">
           <span style="color: ${isHigh ? 'var(--clinical-rose)' : 'var(--clinical-cyan)'}; font-weight: 700;">${probPct}% Probability</span>
-          <span style="color: var(--text-dim);">${diff.organ_system || 'General'}</span>
+          <span style="color: var(--text-dim);">${escapeHTML(diff.organ_system || 'General')}</span>
         </div>
-        <div class="diff-meta-desc">${diff.justification}</div>
+        <div class="diff-meta-desc">${escapeHTML(diff.justification)}</div>
       `;
       el.diffListContainer.appendChild(card);
     });
@@ -847,7 +922,7 @@ function setOldcartVal(elem, value) {
 
 function resetTriageHUD() {
   el.esiBadgeDisplay.className = "esi-tag esi-3";
-  el.esiBadgeDisplay.textContent = "ESI-3 URGENT";
+  el.esiBadgeDisplay.textContent = "Awaiting intake";
   el.esiDispositionText.textContent = "Awaiting clinical symptom assessment and OLD CARTS parameters.";
   el.triagePhaseBadge.textContent = "INTAKE";
   el.emergencyBanner.classList.add("hidden");
@@ -864,7 +939,7 @@ function resetTriageHUD() {
         <span>Awaiting symptom report</span>
         <span class="diff-icd-chip">Z00.00</span>
       </div>
-      <div class="diff-meta-desc">Speak or type symptoms to calculate Bayesian differential probabilities.</div>
+      <div class="diff-meta-desc">Possible conditions will appear after an intake. Scores are illustrative.</div>
     </div>
   `;
 }
@@ -872,8 +947,12 @@ function resetTriageHUD() {
 
 // --- SCANUP VISUAL PATHOLOGY GAUGES (Inspired by Sehatlings Muaina) ---
 async function extractBiomarkersFromText(clinicalText) {
+  state.revision += 1;
+  clearGeneratedRecords();
+  const requestEncounter = state.encounterId;
+  const requestRevision = state.revision;
   try {
-    const res = await fetch("/api/triage/biomarkers", {
+    const res = await apiFetch("/api/triage/biomarkers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -884,6 +963,7 @@ async function extractBiomarkersFromText(clinicalText) {
 
     if (!res.ok) throw new Error("Biomarker extraction failed");
     const data = await res.json();
+    if (state.encounterId !== requestEncounter || state.revision !== requestRevision) return;
 
     state.extractedBiomarkers = data.biomarkers;
     renderScanUpGauges(data.biomarkers);
@@ -893,7 +973,7 @@ async function extractBiomarkersFromText(clinicalText) {
 
   } catch (err) {
     console.error("ScanUp lab error:", err);
-    alert("Biomarker extraction error: " + err.message);
+    showNotice("Biomarker extraction error: " + err.message);
   }
 }
 
@@ -918,23 +998,23 @@ function renderScanUpGauges(biomarkers) {
     card.className = "bio-gauge-card";
     card.innerHTML = `
       <div class="bio-card-top">
-        <span class="bio-test-title">${b.name} (${b.test_code})</span>
-        <span class="bio-loinc-badge">LOINC: ${b.loinc_code}</span>
+        <span class="bio-test-title">${escapeHTML(b.name)} (${escapeHTML(b.test_code)})</span>
+        <span class="bio-loinc-badge">LOINC: ${escapeHTML(b.loinc_code)}</span>
       </div>
       <div class="bio-value-row">
-        <span class="bio-measured-num">${b.value} <span style="font-size: 13px; color: var(--text-secondary); font-weight: normal;">${b.unit}</span></span>
+        <span class="bio-measured-num">${b.value} <span style="font-size: 13px; color: var(--text-secondary); font-weight: normal;">${escapeHTML(b.unit)}</span></span>
         <span class="bio-status-pill status-${b.status}">${b.status}</span>
       </div>
-      
+
       <!-- Visual Reference Interval Slider Track -->
       <div class="reference-slider-track">
         <div class="gauge-pointer-needle" style="left: ${pct}%;"></div>
       </div>
       <div class="reference-bounds-label">
-        <span>Low: ${b.reference_low} ${b.unit}</span>
-        <span>High: ${b.reference_high} ${b.unit}</span>
+        <span>Low: ${b.reference_low} ${escapeHTML(b.unit)}</span>
+        <span>High: ${b.reference_high} ${escapeHTML(b.unit)}</span>
       </div>
-      <div class="bio-interp-text">${b.clinical_interpretation}</div>
+      <div class="bio-interp-text">${escapeHTML(b.clinical_interpretation)}</div>
     `;
     el.biomarkerGaugesGrid.appendChild(card);
   });
@@ -943,8 +1023,11 @@ function renderScanUpGauges(biomarkers) {
 
 // --- SOAP NOTE SYNTHESIS ---
 async function generateSOAPNote() {
+  if (state.sendingEncounter === state.encounterId) { showNotice("Finish the current intake before generating a document."); return; }
+  const requestEncounter = state.encounterId;
+  const requestRevision = state.revision;
   if (!state.latestAssessment) {
-    alert("Please conduct a triage intake first so clinical parameters are present.");
+    showNotice("Please conduct a triage intake first so clinical parameters are present.");
     return;
   }
 
@@ -964,7 +1047,7 @@ async function generateSOAPNote() {
       telemetry_findings: `Lead II Telemetry shows ${state.currentRhythm} with rate ${state.heartRate} bpm.`
     };
 
-    const res = await fetch("/api/triage/soap", {
+    const res = await apiFetch("/api/triage/soap", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -972,30 +1055,28 @@ async function generateSOAPNote() {
 
     if (!res.ok) throw new Error("SOAP synthesis failed: " + res.statusText);
     const note = await res.json();
+    if (state.encounterId !== requestEncounter || state.revision !== requestRevision) return;
     state.lastSoapNote = note;
 
-    if (typeof marked !== "undefined") {
-      el.soapRenderedContent.innerHTML = marked.parse(note.markdown_formatted);
-    } else {
-      el.soapRenderedContent.innerText = note.markdown_formatted;
-    }
+    el.soapRenderedContent.innerHTML = renderMarkdown(note.markdown_formatted);
 
-    auditLinkedEvidence();
-    compileFHIRBundle();
+    await Promise.all([auditLinkedEvidence(), compileFHIRBundle()]);
 
   } catch (err) {
     console.error("SOAP note error:", err);
-    alert("Error generating SOAP note: " + err.message);
+    showNotice("Error generating SOAP note: " + err.message);
   }
 }
 
 
 // --- LINKED EVIDENCE AUDIT (ABRIDGE ARCHITECTURE) ---
 async function auditLinkedEvidence() {
+  const requestEncounter = state.encounterId;
+  const requestRevision = state.revision;
   if (!state.lastSoapNote) return;
 
   try {
-    const res = await fetch("/api/triage/grounding", {
+    const res = await apiFetch("/api/triage/grounding", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1006,6 +1087,7 @@ async function auditLinkedEvidence() {
 
     if (!res.ok) throw new Error("Grounding audit failed");
     const data = await res.json();
+    if (state.encounterId !== requestEncounter || state.revision !== requestRevision) return;
 
     el.evidenceScoreBadge.textContent = `INTEGRITY ${data.grounding_integrity_percentage}%`;
 
@@ -1014,13 +1096,13 @@ async function auditLinkedEvidence() {
       const item = document.createElement("div");
       item.className = "evidence-card-item";
       item.innerHTML = `
-        <div style="display: flex; justify-content: space-between; font-weight: 700; color: #fff;">
-          <span style="color: var(--clinical-cyan); font-family: var(--font-code);">[${a.target_section}]</span>
+        <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--text-primary);">
+          <span style="color: var(--clinical-cyan); font-family: var(--font-code);">[${escapeHTML(a.target_section)}]</span>
           <span style="font-size: 11px; color: var(--clinical-emerald); font-family: var(--font-code);">${Math.round(a.confidence_score * 100)}% Match</span>
         </div>
-        <div style="font-size: 12px; color: #e2e8f0;">${a.clinical_claim}</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">${escapeHTML(a.clinical_claim)}</div>
         <div style="font-size: 11px; color: var(--text-muted); font-style: italic; border-left: 2px solid var(--clinical-cyan); padding-left: 6px;">
-          "${a.verbatim_transcript_quote}"
+          "${escapeHTML(a.verbatim_transcript_quote)}"
         </div>
       `;
       el.evidenceListContainer.appendChild(item);
@@ -1034,6 +1116,8 @@ async function auditLinkedEvidence() {
 
 // --- CLINICAL CALCULATORS (HEART & Wells PE) ---
 async function runHeartScoreCalculation() {
+  const requestEncounter = state.encounterId;
+  const requestRevision = state.revision;
   try {
     const payload = {
       history_suspicion: parseInt(document.getElementById("heartHistory").value, 10),
@@ -1043,13 +1127,14 @@ async function runHeartScoreCalculation() {
       troponin_initial: parseInt(document.getElementById("heartTrop").value, 10)
     };
 
-    const res = await fetch("/api/calculators/heart", {
+    const res = await apiFetch("/api/calculators/heart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
     if (!res.ok) return;
     const data = await res.json();
+    if (requestEncounter !== state.encounterId || requestRevision !== state.revision) return;
 
     document.getElementById("heartScoreBadge").textContent = `Score: ${data.total_score} / 10`;
     const tag = document.getElementById("heartRiskTag");
@@ -1062,6 +1147,8 @@ async function runHeartScoreCalculation() {
 }
 
 async function runWellsPECalculation() {
+  const requestEncounter = state.encounterId;
+  const requestRevision = state.revision;
   try {
     const payload = {
       clinical_signs_dvt: document.getElementById("wellsDVT").checked,
@@ -1073,13 +1160,14 @@ async function runWellsPECalculation() {
       active_malignancy: document.getElementById("wellsMalign").checked
     };
 
-    const res = await fetch("/api/calculators/wells-pe", {
+    const res = await apiFetch("/api/calculators/wells-pe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
     if (!res.ok) return;
     const data = await res.json();
+    if (requestEncounter !== state.encounterId || requestRevision !== state.revision) return;
 
     document.getElementById("wellsScoreBadge").textContent = `Score: ${data.total_score}`;
     const tag = document.getElementById("wellsRiskTag");
@@ -1094,11 +1182,13 @@ async function runWellsPECalculation() {
 
 // --- RX SAFETY CHECKER ---
 async function runRxSafetyCheck() {
+  const requestEncounter = state.encounterId;
+  const requestRevision = state.revision;
   try {
     const allergies = el.rxAllergiesInput.value.split(",").map(s => s.trim()).filter(Boolean);
     const proposed = el.rxProposedInput.value.split(",").map(s => s.trim()).filter(Boolean);
 
-    const res = await fetch("/api/safety/rx-check", {
+    const res = await apiFetch("/api/safety/rx-check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1109,6 +1199,7 @@ async function runRxSafetyCheck() {
     });
     if (!res.ok) return;
     const data = await res.json();
+    if (requestEncounter !== state.encounterId || requestRevision !== state.revision) return;
 
     el.rxAlertsList.innerHTML = "";
     if (data.alerts.length === 0) {
@@ -1126,14 +1217,14 @@ async function runRxSafetyCheck() {
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; font-weight: 700; font-family: var(--font-code);">
           <span style="color: ${a.severity === 'CRITICAL_AVOID' ? 'var(--clinical-rose)' : 'var(--clinical-amber)'};">
-            ${a.severity === 'CRITICAL_AVOID' ? '🚨 CRITICAL CONTRAINDICATION' : '⚠️ CROSS-REACTIVITY / INTERACTION'} — ${a.trigger_drug.toUpperCase()}
+            ${a.severity === 'CRITICAL_AVOID' ? '🚨 CRITICAL CONTRAINDICATION' : '⚠️ CROSS-REACTIVITY / INTERACTION'} — ${escapeHTML(a.trigger_drug.toUpperCase())}
           </span>
           <span style="font-size: 11px; opacity: 0.8;">${a.alert_type}</span>
         </div>
-        <div style="color: #fff;"><strong>Trigger:</strong> ${a.offending_factor}</div>
-        <div style="color: #cbd5e1; font-size: 12px;">${a.clinical_mechanism}</div>
+        <div style="color: var(--text-primary);"><strong>Trigger:</strong> ${escapeHTML(a.offending_factor)}</div>
+        <div style="color: var(--text-secondary); font-size: 12px;">${escapeHTML(a.clinical_mechanism)}</div>
         <div style="color: var(--clinical-emerald); font-size: 12px; margin-top: 2px;">
-          <strong>Safe Alternative:</strong> ${a.recommended_safe_alternative}
+          <strong>Safe Alternative:</strong> ${escapeHTML(a.recommended_safe_alternative)}
         </div>
       `;
       el.rxAlertsList.appendChild(card);
@@ -1147,13 +1238,16 @@ async function runRxSafetyCheck() {
 
 // --- PATIENT AFTER-VISIT SUMMARY (AVS) ---
 async function generatePatientAVS() {
+  if (state.sendingEncounter === state.encounterId) { showNotice("Finish the current intake before generating a document."); return; }
+  const requestEncounter = state.encounterId;
+  const requestRevision = state.revision;
   if (!state.latestAssessment) {
-    alert("Conduct triage intake first.");
+    showNotice("Conduct triage intake first.");
     return;
   }
 
   try {
-    const res = await fetch("/api/triage/avs", {
+    const res = await apiFetch("/api/triage/avs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1166,23 +1260,24 @@ async function generatePatientAVS() {
 
     if (!res.ok) throw new Error("AVS failed");
     const avs = await res.json();
+    if (state.encounterId !== requestEncounter || state.revision !== requestRevision) return;
     state.lastAvs = avs;
 
     // Render in modal preview
     el.printableChartBody.innerHTML = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; line-height: 1.6; padding: 20px;">
         <h2 style="font-size: 22px; color: #0284c7; margin-bottom: 12px;">Patient Care Summary & Home Instructions</h2>
-        <div style="font-size: 14px; color: #334155; margin-bottom: 16px;">${avs.what_happened_today}</div>
+        <div style="font-size: 14px; color: #334155; margin-bottom: 16px;">${escapeHTML(avs.what_happened_today)}</div>
         <h3 style="font-size: 16px; color: #dc2626; margin-top: 16px;">⚠️ Warning Signs (When to Call 911):</h3>
         <ul style="padding-left: 20px; font-size: 13px;">
-          ${avs.emergency_danger_signs.map(s => `<li>${s}</li>`).join("")}
+          ${avs.emergency_danger_signs.map(s => `<li>${escapeHTML(s)}</li>`).join("")}
         </ul>
         <h3 style="font-size: 16px; color: #059669; margin-top: 16px;">💊 Medication Instructions:</h3>
         <ul style="padding-left: 20px; font-size: 13px;">
-          ${avs.medications_instructions.map(m => `<li>${m}</li>`).join("")}
+          ${avs.medications_instructions.map(m => `<li>${escapeHTML(m)}</li>`).join("")}
         </ul>
         <div style="margin-top: 20px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; color: #64748b;">
-          Triage Verification Code: <strong>${avs.telehealth_verification_code}</strong> | Encounter ID: <strong>${avs.encounter_id}</strong>
+          Triage Verification Code: <strong>${escapeHTML(avs.telehealth_verification_code)}</strong> | Encounter ID: <strong>${escapeHTML(avs.encounter_id)}</strong>
         </div>
       </div>
     `;
@@ -1194,8 +1289,9 @@ async function generatePatientAVS() {
 }
 
 function openPrintableChartModal() {
+  if (state.sendingEncounter === state.encounterId) { showNotice("Finish the current intake before opening the chart."); return; }
   if (!state.latestAssessment) {
-    alert("Please conduct a clinical intake or load a scenario first.");
+    showNotice("Please conduct a clinical intake or load a scenario first.");
     return;
   }
 
@@ -1206,7 +1302,7 @@ function openPrintableChartModal() {
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; line-height: 1.5; padding: 10px;">
       <div style="border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
-          <h1 style="font-size: 22px; margin: 0 0 4px 0; letter-spacing: -0.5px;">SAINT JUDE EMERGENCY HEALTH ENCLAVE</h1>
+          <h1 style="font-size: 22px; margin: 0 0 4px 0; letter-spacing: -0.5px;">Vaani · Encounter summary</h1>
           <div style="font-size: 13px; color: #555;">VAANI CLINICAL TELEMEDICINE & EMERGENCY TRIAGE SERVICE</div>
         </div>
         <div style="text-align: right; font-size: 12px; font-family: monospace;">
@@ -1216,36 +1312,36 @@ function openPrintableChartModal() {
       </div>
 
       <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 4px; margin-bottom: 16px; display: grid; grid-template-columns: 2fr 1fr 1fr;">
-        <div><strong>Patient Name:</strong> ${p.name} | <strong>MRN:</strong> ${p.mrn}</div>
-        <div><strong>Age / Sex:</strong> ${p.age || 'Unspecified'} / ${p.biological_sex.toUpperCase()}</div>
-        <div><strong>Triage Rating:</strong> <span style="background: #000; color: #fff; padding: 2px 6px; font-size: 11px; font-weight: bold;">${a.triage_status}</span></div>
+        <div><strong>Patient Name:</strong> ${escapeHTML(p.name)} | <strong>MRN:</strong> ${escapeHTML(p.mrn)}</div>
+        <div><strong>Age / Sex:</strong> ${p.age || 'Unspecified'} / ${escapeHTML(p.biological_sex.toUpperCase())}</div>
+        <div><strong>Triage Rating:</strong> <span style="background: #000; color: var(--text-primary); padding: 2px 6px; font-size: 11px; font-weight: bold;">${a.triage_status}</span></div>
       </div>
 
       <div style="margin-bottom: 14px;">
         <h3 style="font-size: 14px; margin: 0 0 6px 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">HISTORY OF PRESENT ILLNESS (OLD CARTS)</h3>
-        <p style="font-size: 13px; margin: 0 0 6px 0;"><strong>Chief Complaint:</strong> ${a.chief_complaint}</p>
+        <p style="font-size: 13px; margin: 0 0 6px 0;"><strong>Chief Complaint:</strong> ${escapeHTML(a.chief_complaint)}</p>
         <p style="font-size: 13px; margin: 0 0 6px 0;">
-          Onset: ${a.hpi.onset || 'Unspecified'} | Location: ${a.hpi.location || 'Unspecified'} | Duration: ${a.hpi.duration || 'Unspecified'}<br>
-          Character: ${a.hpi.character || 'Unspecified'} | Radiation: ${a.hpi.radiation || 'None'} | Pain Score: ${a.hpi.severity || '--'}/10
+          Onset: ${escapeHTML(a.hpi.onset || 'Unspecified')} | Location: ${escapeHTML(a.hpi.location || 'Unspecified')} | Duration: ${escapeHTML(a.hpi.duration || 'Unspecified')}<br>
+          Character: ${escapeHTML(a.hpi.character || 'Unspecified')} | Radiation: ${escapeHTML(a.hpi.radiation || 'None')} | Pain Score: ${a.hpi.severity ?? '--'}/10
         </p>
       </div>
 
       <div style="margin-bottom: 14px;">
         <h3 style="font-size: 14px; margin: 0 0 6px 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">DIAGNOSTIC ASSESSMENT & ICD-10-CM</h3>
         <p style="font-size: 13px; margin: 0 0 6px 0;">
-          <strong>Primary Working Diagnosis:</strong> ${a.differentials[0] ? a.differentials[0].condition_name : 'Acute Symptom Complex'} 
-          (ICD-10: <code>${a.differentials[0] ? a.differentials[0].icd10_code : 'R69'}</code>)
+          <strong>Primary Working Diagnosis:</strong> ${escapeHTML(a.differentials[0] ? a.differentials[0].condition_name : 'Acute Symptom Complex')}
+          (ICD-10: <code>${escapeHTML(a.differentials[0] ? a.differentials[0].icd10_code : 'R69')}</code>)
         </p>
       </div>
 
       <div style="margin-bottom: 14px;">
         <h3 style="font-size: 14px; margin: 0 0 6px 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">RECOMMENDED PLAN & DISPOSITION</h3>
-        <p style="font-size: 13px; margin: 0 0 6px 0;"><strong>Disposition:</strong> ${a.recommended_disposition}</p>
+        <p style="font-size: 13px; margin: 0 0 6px 0;"><strong>Disposition:</strong> ${escapeHTML(a.recommended_disposition)}</p>
       </div>
 
       <div style="border-top: 1px dashed #999; padding-top: 10px; font-size: 11px; color: #666; display: flex; justify-content: space-between;">
-        <span>Document Electronically Authenticated via Vaani Clinical CDS Engine</span>
-        <span>HL7 FHIR Release 4 Transaction Compliant</span>
+        <span>Educational simulation · Review all generated content</span>
+        <span>FHIR R4 export preview</span>
       </div>
     </div>
   `;
@@ -1256,6 +1352,9 @@ function openPrintableChartModal() {
 
 // --- HL7 FHIR RELEASE 4 COMPILATION ---
 async function compileFHIRBundle() {
+  if (state.sendingEncounter === state.encounterId) { showNotice("Finish the current intake before generating a document."); return; }
+  const requestEncounter = state.encounterId;
+  const requestRevision = state.revision;
   if (!state.latestAssessment) return;
 
   try {
@@ -1267,7 +1366,7 @@ async function compileFHIRBundle() {
       soap_note: state.lastSoapNote
     };
 
-    const res = await fetch("/api/triage/fhir", {
+    const res = await apiFetch("/api/triage/fhir", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -1275,6 +1374,7 @@ async function compileFHIRBundle() {
 
     if (!res.ok) throw new Error("FHIR compilation failed");
     const bundle = await res.json();
+    if (state.encounterId !== requestEncounter || state.revision !== requestRevision) return;
     state.lastFhirBundle = bundle;
 
     el.fhirCodeView.textContent = JSON.stringify(bundle.raw_fhir_json, null, 2);
@@ -1288,7 +1388,7 @@ async function compileFHIRBundle() {
 // --- PRESET SCENARIO LOADER ---
 async function loadPresetScenarios() {
   try {
-    const res = await fetch("/api/scenarios");
+    const res = await apiFetch("/api/scenarios");
     if (!res.ok) throw new Error("Could not fetch scenarios");
     const scenarios = await res.json();
 
@@ -1326,10 +1426,8 @@ async function loadPresetScenarios() {
 }
 
 async function applyScenario(sc) {
-  state.encounterId = "ENC-" + Math.floor(10000 + Math.random() * 90000);
-  state.patientProfile = sc.patient_profile;
-  state.dialogueHistory = [];
-  updatePatientHUD();
+  resetEncounter(sc.patient_profile);
+  const scenarioEncounter = state.encounterId;
 
   if (sc.id === "scenario-stemi-cardiac") {
     document.querySelector('[data-rhythm="STEMI"]').click();
@@ -1341,9 +1439,9 @@ async function applyScenario(sc) {
 
   el.dialogueStream.innerHTML = `
     <div class="message-bubble-row agent">
-      <div class="bubble-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
+      <div class="bubble-meta">Vaani · Intake assistant • INTAKE</div>
       <div class="bubble-text">
-        Hello, this is the Vaani Clinical Triage Service. I am an intelligent clinical receptionist. 
+        Welcome to Vaani. This is a simulated clinical intake.
         Please describe what symptoms or medical emergency you are experiencing today.
       </div>
     </div>
@@ -1352,17 +1450,16 @@ async function applyScenario(sc) {
   document.querySelector('[data-target="suite-telephony"]').click();
 
   for (const msg of sc.sample_dialogue) {
-    await sendPatientMessage(msg.content);
-    await new Promise(r => setTimeout(r, 600));
+    if (state.encounterId !== scenarioEncounter) return;
+    if (!await sendPatientMessage(msg.content)) return;
+    await new Promise(r => setTimeout(r, 240));
   }
 
+  if (state.encounterId !== scenarioEncounter) return;
   if (sc.lab_text_snippet) {
     el.labInputText.value = sc.lab_text_snippet;
     await extractBiomarkersFromText(sc.lab_text_snippet);
   }
 
-  setTimeout(async () => {
-    await generateSOAPNote();
-    await compileFHIRBundle();
-  }, 800);
+  if (state.encounterId === scenarioEncounter) await generateSOAPNote();
 }

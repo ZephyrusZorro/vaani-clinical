@@ -126,7 +126,10 @@ def list_scenarios():
 
 @app.get("/api/scenarios/{scenario_id}", response_model=ClinicalScenario)
 def get_scenario(scenario_id: str):
-    return get_scenario_by_id(scenario_id)
+    scenario = get_scenario_by_id(scenario_id)
+    if scenario is None:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    return scenario
 
 
 @app.post("/api/triage/message", response_model=TriageMessageResponse)

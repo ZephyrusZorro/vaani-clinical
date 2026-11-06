@@ -3,13 +3,22 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![HL7 FHIR v4](https://img.shields.io/badge/HL7_FHIR-Release_4-orange.svg)](https://hl7.org/fhir/R4/)
-[![Tests Passing](https://img.shields.io/badge/pytest-39%2F39%20passed-brightgreen.svg)]()
+[![Tests Passing](https://img.shields.io/badge/pytest-40%20passed-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Vaani (वाणी)** — Sanskrit/Hindi for *Voice*, *Speech*, or *The Spoken Word*.  
 > A real-time clinical telephony receptionist, conversational triage copilot, and automated electronic health record (EHR) synthesis platform.
 
 ---
+
+
+## Pearl workspace
+
+A light clinical workspace with frosted surfaces, muted teal accents, responsive layouts, and restrained transitions. The five workspaces cover intake, lab results, decision support, documentation, and scenarios. Motion respects the system's reduced-motion preference; dialogs support keyboard focus and Escape.
+
+![Vaani Pearl workspace](docs/screenshots/desktop.png)
+
+Vaani is an educational simulation. Waveforms and vitals are simulated, scores are illustrative, and the escalation control does not place a call or dispatch emergency services. Generated content needs professional review; no hospital affiliation, physician credential, or compliance certification is implied by the interface.
 
 ## 🏥 Architecture Overview
 
@@ -50,7 +59,7 @@ flowchart TD
 
 ---
 
-## 🌟 Master-Grade Capabilities
+## Capabilities
 
 1. **Conversational State Machine & OLD CARTS HPI Investigation**
    - Automatically guides incoming telephony calls through 5 clinical phases: `INTAKE` $\rightarrow$ `HPI_INVESTIGATION` $\rightarrow$ `MEDS_ALLERGIES` $\rightarrow$ `ASSESSMENT` $\rightarrow$ `DISPOSITION`.
@@ -93,7 +102,7 @@ flowchart TD
    - Translates complex medical diagnoses into compassionate, 6th-grade reading level patient-facing discharge instructions.
    - Includes full-screen Hospital Encounter Chart modal (Epic / Cerner formatted) ready for instant printing or PDF export.
 
-8. **Retro-Cyber Telemetry & Arrhythmia Studio**
+8. **Pearl Workspace & Simulated Telemetry**
    - Lead II cardiac monitor with live arrhythmia selector: Normal Sinus Rhythm, Sinus Tachycardia, STEMI Elevation, Atrial Fibrillation, and Ventricular Fibrillation Arrest.
    - Real-time HR slider adjusting mathematical canvas rendering speed.
    - Dual-Tone Multi-Frequency (DTMF) dial pad synthesizer emitting genuine telephony audio tones.
@@ -120,9 +129,9 @@ vaani-clinical/
 │   ├── db.py                   # SQLite persistence layer
 │   └── main.py                 # FastAPI application & REST endpoints
 ├── frontend/
-│   ├── index.html              # 7-Workspace hospital telemetry workstation
+│   ├── index.html              # Five clinical workspaces
 │   ├── css/
-│   │   └── vaani.css           # Retro-cyber styling, CRT overlay, glowing HUD
+│   │   └── vaani.css           # Base layout and clinical components
 │   ├── fonts/
 │   │   ├── SpaceGrotesk-Variable.woff2
 │   │   ├── SpaceMono-400.woff2
@@ -157,7 +166,7 @@ Clone repository and install dependencies:
 ```bash
 git clone https://github.com/ZephyrusZorro/vaani-clinical.git
 cd vaani-clinical
-pip install fastapi uvicorn pydantic pytest httpx
+pip install -r requirements-dev.txt
 ```
 
 ### 3. Launching the Workstation
@@ -177,7 +186,7 @@ Navigate to **`http://127.0.0.1:8001`** in your browser.
 
 ---
 
-## 🧪 Automated Test Suite (39 / 39 Passing)
+## 🧪 Automated Test Suite (40 passing)
 
 Run the full pytest suite:
 ```bash
@@ -225,10 +234,24 @@ tests/test_triage.py::test_anaphylaxis_red_flag_detection PASSED
 tests/test_triage.py::test_dka_red_flag_detection PASSED
 tests/test_triage.py::test_routine_presentation_scoring PASSED
 tests/test_triage.py::test_process_triage_turn PASSED
-============================== 39 passed in 0.51s ==============================
+============================== 40 passed (current suite; timing varies) ==============================
 ```
 
 ---
 
 ## ⚖️ Clinical Disclaimer
 *Vaani Clinical is designed for clinical research, medical education, and telephony triage augmentation. It demonstrates conversational state modeling, algorithmic rule-out safety, clinical decision calculation, and HL7 FHIR v4 interoperability. It does not replace direct clinical judgment by a licensed physician or emergency medical provider.*
+
+## Browser verification
+
+Install optional browser-test dependencies with `python -m pip install -r requirements-dev.txt`. The scripts below use an installed Microsoft Edge browser via Playwright. Start the server, then run:
+
+```powershell
+python -m pytest -q
+python tests/browser_regressions.py http://127.0.0.1:8001
+python tests/browser_smoke.py http://127.0.0.1:8001
+```
+
+Browser tests create synthetic encounters in the local database. Use a disposable checkout for a clean demonstration database. The legacy `test_e2e_frontend.py` is an opt-in API walkthrough and no longer performs network requests during pytest collection.
+
+See [redesign verification](docs/interface-verification.md) for checked flows and boundaries.
