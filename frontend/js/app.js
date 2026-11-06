@@ -1,8 +1,8 @@
 /**
- * Vaani Clinical (वाणी) — Telemetry & Triage Workstation Application
- * Real-time Clinical Telephony, OLD CARTS HPI reasoning, Arrhythmia ECG canvas,
- * LOINC lab biomarker extraction, SOAP note synthesis, HL7 FHIR v4 bundles,
- * HEART / Wells / qSOFA / GCS calculators, RxNorm drug safety, and Linked Evidence grounding.
+ * Vaani Clinical (वाणी) — Enterprise Clinical Intelligence Workstation
+ * Inspired by Sehatlings Muaina & High-End Clinical Telehealth Suites
+ * Incorporates Daktari AI Telephony, ScanUp Pathology Gauges, One-Tap-Go Triage,
+ * Abridge Linked Evidence Grounding, and HL7 FHIR Release 4 Interoperability.
  */
 
 // Application State
@@ -25,10 +25,10 @@ const state = {
   lastSoapNote: null,
   lastFhirBundle: null,
   lastAvs: null,
-  // ECG & Arrhythmia simulation
+  // ICU Telemetry & Arrhythmia simulation
   currentRhythm: "TACHY",
   heartRate: 118,
-  // Audio & Speech recognition
+  // Web Audio & Speech recognition
   isLiveMicActive: false,
   speechRecognizer: null,
   audioContext: null,
@@ -70,45 +70,38 @@ const el = {
   oldcartRelieving: document.getElementById("oldcartRelieving"),
   oldcartRadiation: document.getElementById("oldcartRadiation"),
   oldcartSeverity: document.getElementById("oldcartSeverity"),
-  // SOAP Studio
-  generateSoapBtn: document.getElementById("generateSoapBtn"),
-  copySoapBtn: document.getElementById("copySoapBtn"),
-  auditGroundingBtn: document.getElementById("auditGroundingBtn"),
-  soapRenderedContent: document.getElementById("soapRenderedContent"),
-  evidenceListContainer: document.getElementById("evidenceListContainer"),
-  evidenceScoreBadge: document.getElementById("evidenceScoreBadge"),
-  // Biomarkers Lab
+  // ScanUp Pathology Gauges
   labInputText: document.getElementById("labInputText"),
   pasteSampleLabBtn: document.getElementById("pasteSampleLabBtn"),
   extractLabBtn: document.getElementById("extractLabBtn"),
-  biomarkerTableBody: document.getElementById("biomarkerTableBody"),
+  biomarkerGaugesGrid: document.getElementById("biomarkerGaugesGrid"),
   bioOrganAlertCount: document.getElementById("bioOrganAlertCount"),
   // Calculators & Rx Safety
   calcHeartBtn: document.getElementById("calcHeartBtn"),
   calcWellsBtn: document.getElementById("calcWellsBtn"),
-  calcQsofaBtn: document.getElementById("calcQsofaBtn"),
-  calcGcsBtn: document.getElementById("calcGcsBtn"),
   runRxCheckBtn: document.getElementById("runRxCheckBtn"),
   rxAllergiesInput: document.getElementById("rxAllergiesInput"),
   rxProposedInput: document.getElementById("rxProposedInput"),
   rxAlertsList: document.getElementById("rxAlertsList"),
-  // AVS & Printable Chart
+  // EHR Scribe & Grounding
+  generateSoapBtn: document.getElementById("generateSoapBtn"),
   generateAvsBtn: document.getElementById("generateAvsBtn"),
   openPrintChartBtn: document.getElementById("openPrintChartBtn"),
-  avsRenderedContent: document.getElementById("avsRenderedContent"),
+  copySoapBtn: document.getElementById("copySoapBtn"),
+  soapRenderedContent: document.getElementById("soapRenderedContent"),
+  evidenceListContainer: document.getElementById("evidenceListContainer"),
+  evidenceScoreBadge: document.getElementById("evidenceScoreBadge"),
+  downloadFhirBtn: document.getElementById("downloadFhirBtn"),
+  fhirCodeView: document.getElementById("fhirCodeView"),
+  // Modals
   chartModalOverlay: document.getElementById("chartModalOverlay"),
   closeModalBtn: document.getElementById("closeModalBtn"),
   printModalBtn: document.getElementById("printModalBtn"),
   printableChartBody: document.getElementById("printableChartBody"),
-  // DTMF Modal
   dtmfModalOverlay: document.getElementById("dtmfModalOverlay"),
   closeDtmfBtn: document.getElementById("closeDtmfBtn"),
   dtmfNumberDisplay: document.getElementById("dtmfNumberDisplay"),
-  // FHIR Explorer
-  generateFhirBtn: document.getElementById("generateFhirBtn"),
-  downloadFhirBtn: document.getElementById("downloadFhirBtn"),
-  fhirCodeView: document.getElementById("fhirCodeView"),
-  // Clinical Simulator
+  // Scenarios
   scenariosGrid: document.getElementById("scenariosGrid"),
   // Canvases & Telemetry Controls
   ecgCanvas: document.getElementById("ecgCanvas"),
@@ -133,11 +126,9 @@ window.addEventListener("DOMContentLoaded", () => {
   loadPresetScenarios();
   updatePatientHUD();
 
-  // Run initial calculator & safety checks
+  // Run initial calculations
   runHeartScoreCalculation();
   runWellsPECalculation();
-  runQsofaCalculation();
-  runGcsCalculation();
   runRxSafetyCheck();
 });
 
@@ -160,12 +151,12 @@ function initClock() {
 
 // --- TAB NAVIGATION ---
 function initTabNavigation() {
-  const tabs = document.querySelectorAll(".tab-btn");
+  const tabs = document.querySelectorAll(".suite-tab-btn");
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
       const targetId = tab.getAttribute("data-target");
       tabs.forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".workspace-panel").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".suite-panel").forEach(p => p.classList.remove("active"));
 
       tab.classList.add("active");
       const targetPanel = document.getElementById(targetId);
@@ -200,7 +191,7 @@ function initECGMonitor() {
 
   function resizeCanvas() {
     canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = 54;
+    canvas.height = 52;
   }
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
@@ -211,9 +202,9 @@ function initECGMonitor() {
   let afibNoisePhase = 0;
 
   // Rhythm selector event buttons
-  document.querySelectorAll(".rhythm-btn").forEach(btn => {
+  document.querySelectorAll(".rhythm-pill").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".rhythm-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".rhythm-pill").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       const r = btn.getAttribute("data-rhythm");
       const hr = parseInt(btn.getAttribute("data-hr"), 10);
@@ -239,68 +230,67 @@ function initECGMonitor() {
     const baseline = canvas.height / 2;
 
     if (rhythm === "VFIB") {
-      // Coarse Ventricular Fibrillation: chaotic sinusoidal arrest pattern
+      // Coarse Ventricular Fibrillation: chaotic sinusoidal arrest oscillation
       return baseline + Math.sin(t * 0.12) * 14 + Math.sin(t * 0.28) * 8 + (Math.random() - 0.5) * 6;
     }
 
     const normT = (t % 100) / 100; // 0.0 to 1.0
 
     if (rhythm === "STEMI") {
-      // Marked ST segment elevation (tombstone ST elevation)
+      // Marked ST segment elevation (tombstone pattern)
       if (normT > 0.15 && normT < 0.22) {
-        return baseline - Math.sin((normT - 0.15) / 0.07 * Math.PI) * 4; // P wave
+        return baseline - Math.sin((normT - 0.15) / 0.07 * Math.PI) * 4;
       } else if (normT >= 0.28 && normT < 0.30) {
-        return baseline + 3; // Q
+        return baseline + 3;
       } else if (normT >= 0.30 && normT < 0.34) {
-        return baseline - 24; // R spike
+        return baseline - 24;
       } else if (normT >= 0.34 && normT < 0.37) {
-        return baseline - 8; // Elevated ST takeoff
+        return baseline - 8;
       } else if (normT >= 0.37 && normT < 0.65) {
-        // High ST plateau + peaked T wave
         return baseline - 12 - Math.sin((normT - 0.37) / 0.28 * Math.PI) * 7;
       }
       return baseline;
     }
 
     if (rhythm === "AFIB") {
-      // Atrial Fibrillation: No P waves, irregular baseline, random R spike intervals
+      // Atrial Fibrillation: No P waves, irregular baseline, random R intervals
       afibNoisePhase += 0.2;
       const fWaveNoise = Math.sin(afibNoisePhase * 3.4) * 2.2 + (Math.random() - 0.5) * 2.5;
       if (normT >= 0.30 && normT < 0.34) {
-        return baseline - 22; // R spike
+        return baseline - 22;
       } else if (normT >= 0.34 && normT < 0.37) {
-        return baseline + 6; // S
+        return baseline + 6;
       } else if (normT > 0.48 && normT < 0.62) {
         return baseline - Math.sin((normT - 0.48) / 0.14 * Math.PI) * 4 + fWaveNoise;
       }
       return baseline + fWaveNoise;
     }
 
-    // Normal Sinus Rhythm (NSR) & Sinus Tachycardia (TACHY)
+    // Normal Sinus (NSR) & Sinus Tachycardia (TACHY)
     if (normT > 0.15 && normT < 0.22) {
-      return baseline - Math.sin((normT - 0.15) / 0.07 * Math.PI) * 4; // P wave
+      return baseline - Math.sin((normT - 0.15) / 0.07 * Math.PI) * 4;
     } else if (normT >= 0.28 && normT < 0.30) {
-      return baseline + 3; // Q
+      return baseline + 3;
     } else if (normT >= 0.30 && normT < 0.34) {
-      return baseline - 24; // R spike
+      return baseline - 24;
     } else if (normT >= 0.34 && normT < 0.37) {
-      return baseline + 7; // S
+      return baseline + 7;
     } else if (normT > 0.48 && normT < 0.62) {
-      return baseline - Math.sin((normT - 0.48) / 0.14 * Math.PI) * 6; // T wave
+      return baseline - Math.sin((normT - 0.48) / 0.14 * Math.PI) * 6;
     }
 
     return baseline + (Math.random() - 0.5) * 1.0;
   }
 
   function drawECG() {
-    ctx.fillStyle = "rgba(4, 6, 9, 0.08)";
+    ctx.fillStyle = "rgba(2, 4, 9, 0.09)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Subtle grid lines
-    ctx.strokeStyle = "rgba(20, 28, 44, 0.4)";
+    ctx.strokeStyle = "rgba(20, 32, 56, 0.4)";
     ctx.lineWidth = 0.5;
     ctx.beginPath();
-    for (let gy = 0; gy < canvas.height; gy += 12) {
+    for (let gy = 0; gy < canvas.height; gy += 13) {
       ctx.moveTo(0, gy);
       ctx.lineTo(canvas.width, gy);
     }
@@ -311,9 +301,9 @@ function initECGMonitor() {
 
     const isArrest = state.currentRhythm === "VFIB";
     ctx.shadowBlur = isArrest ? 12 : 8;
-    ctx.shadowColor = isArrest ? "#ff2a55" : "#00e599";
-    ctx.strokeStyle = isArrest ? "#ff3366" : "#00ffaa";
-    ctx.lineWidth = 1.8;
+    ctx.shadowColor = isArrest ? "#f43f5e" : "#10b981";
+    ctx.strokeStyle = isArrest ? "#fb7185" : "#34d399";
+    ctx.lineWidth = 1.9;
 
     ctx.beginPath();
     ctx.moveTo(x, prevY);
@@ -354,7 +344,6 @@ function getAudioContext() {
   return webAudioCtx;
 }
 
-// DTMF Frequency Map
 const DTMF_FREQS = {
   "1": [697, 1209], "2": [697, 1336], "3": [697, 1477],
   "4": [770, 1209], "5": [770, 1336], "6": [770, 1477],
@@ -387,8 +376,7 @@ function playDTMFTone(key) {
 }
 
 function initTelephonySound() {
-  // DTMF buttons
-  document.querySelectorAll(".dtmf-btn").forEach(btn => {
+  document.querySelectorAll(".dtmf-key").forEach(btn => {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-key");
       playDTMFTone(key);
@@ -427,7 +415,7 @@ function initSpeechRecognition() {
 
   recognizer.onstart = () => {
     state.isLiveMicActive = true;
-    el.liveMicBtn.classList.add("active-mic");
+    el.liveMicBtn.classList.add("active-pulse");
     el.micStatus.textContent = "LISTENING LIVE...";
     startRealMicAnalyser();
   };
@@ -477,7 +465,7 @@ function initSpeechRecognition() {
 
 function stopLiveMic() {
   state.isLiveMicActive = false;
-  el.liveMicBtn.classList.remove("active-mic");
+  el.liveMicBtn.classList.remove("active-pulse");
   el.micStatus.textContent = "LIVE MIC STT";
   if (state.micStream) {
     state.micStream.getTracks().forEach(t => t.stop());
@@ -511,7 +499,7 @@ function initAudioVisualizer() {
   const ctx = canvas.getContext("2d");
 
   function resize() {
-    canvas.width = canvas.parentElement.clientWidth - 140;
+    canvas.width = canvas.parentElement.clientWidth - 160;
     canvas.height = 22;
   }
   resize();
@@ -537,7 +525,7 @@ function initAudioVisualizer() {
       for (let i = 0; i < numBars; i++) {
         const val = freqData[i % freqData.length] / 255;
         const height = Math.max(3, val * 18);
-        ctx.fillStyle = val > 0.6 ? "#ff2a55" : (val > 0.3 ? "#00f0ff" : "#00e599");
+        ctx.fillStyle = val > 0.6 ? "#f43f5e" : (val > 0.3 ? "#00e5ff" : "#10b981");
         ctx.fillRect(i * spacing, (canvas.height - height) / 2, barWidth, height);
       }
     } else {
@@ -547,7 +535,7 @@ function initAudioVisualizer() {
           height = 3 + Math.sin(Date.now() * 0.015 + i * 0.4) * 7 + Math.random() * 6;
           dbVal = Math.round(-24 + Math.random() * 12);
         }
-        ctx.fillStyle = audioActive ? "#00f0ff" : "#1a2234";
+        ctx.fillStyle = audioActive ? "#00e5ff" : "#1a2234";
         ctx.fillRect(i * spacing, (canvas.height - height) / 2, barWidth, height);
       }
     }
@@ -621,9 +609,9 @@ function initEventHandlers() {
     updatePatientHUD();
 
     el.dialogueStream.innerHTML = `
-      <div class="msg-row agent">
-        <div class="msg-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
-        <div class="msg-bubble">
+      <div class="message-bubble-row agent">
+        <div class="bubble-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
+        <div class="bubble-text">
           Hello, this is the Vaani Clinical Triage Service. I am an intelligent clinical receptionist. 
           Please describe what symptoms or medical emergency you are experiencing today.
         </div>
@@ -648,9 +636,8 @@ function initEventHandlers() {
       alert("Please synthesize a SOAP note first.");
     }
   });
-  el.auditGroundingBtn.addEventListener("click", auditLinkedEvidence);
 
-  // Biomarker Lab buttons
+  // ScanUp Pathology Lab buttons
   el.pasteSampleLabBtn.addEventListener("click", () => {
     el.labInputText.value = 
 `Comprehensive Clinical Lab Panel:
@@ -659,7 +646,7 @@ BNP: 420 pg/mL
 D-Dimer: 0.38 ug/mL FEU
 Serum Fasting Glucose: 285 mg/dL
 HbA1c: 9.8 %
-Serum Creatinine: 2.1 mg/dL
+Serum Creatinine: 2.4 mg/dL
 eGFR: 42 mL/min/1.73m2
 Serum Potassium: 5.6 mEq/L
 Blood Hemoglobin: 13.8 g/dL
@@ -678,8 +665,6 @@ White Blood Cell: 12.8 x10^3/uL`;
   // Calculators & Rx Safety
   el.calcHeartBtn.addEventListener("click", runHeartScoreCalculation);
   el.calcWellsBtn.addEventListener("click", runWellsPECalculation);
-  el.calcQsofaBtn.addEventListener("click", runQsofaCalculation);
-  el.calcGcsBtn.addEventListener("click", runGcsCalculation);
   el.runRxCheckBtn.addEventListener("click", runRxSafetyCheck);
 
   // AVS & Printable Chart
@@ -689,7 +674,6 @@ White Blood Cell: 12.8 x10^3/uL`;
   el.printModalBtn.addEventListener("click", () => window.print());
 
   // FHIR Explorer buttons
-  el.generateFhirBtn.addEventListener("click", compileFHIRBundle);
   el.downloadFhirBtn.addEventListener("click", () => {
     if (!state.lastFhirBundle) {
       alert("Compile FHIR bundle first.");
@@ -744,27 +728,27 @@ async function sendPatientMessage(text) {
 // --- CHAT STREAM BUBBLE BUILDER ---
 function appendChatBubble(role, content, speechText = null) {
   const row = document.createElement("div");
-  row.className = `msg-row ${role}`;
+  row.className = `message-bubble-row ${role}`;
   row.id = `turn-${state.dialogueHistory.length}`;
 
   const meta = document.createElement("div");
-  meta.className = "msg-meta";
+  meta.className = "bubble-meta";
   meta.textContent = role === "patient" 
     ? `${state.patientProfile.name.toUpperCase()} (CALLER)`
     : "VAANI CLINICAL AI RECEPTIONIST";
 
   const bubble = document.createElement("div");
-  bubble.className = "msg-bubble";
+  bubble.className = "bubble-text";
   bubble.innerHTML = content.replace(/\n/g, "<br>");
 
   if (speechText) {
     const audioBar = document.createElement("div");
-    audioBar.className = "msg-bubble-audio";
+    audioBar.className = "bubble-tts-bar";
     audioBar.innerHTML = `
       <span>🔊 TTS Speech Synthesized</span>
-      <button class="play-speech-btn">PLAY AGAIN</button>
+      <button class="btn-revoice">PLAY AGAIN</button>
     `;
-    audioBar.querySelector(".play-speech-btn").addEventListener("click", () => {
+    audioBar.querySelector(".btn-revoice").addEventListener("click", () => {
       speakText(speechText);
     });
     bubble.appendChild(audioBar);
@@ -785,7 +769,7 @@ function updateTriageHUD(data) {
   const hpi = assess.hpi;
 
   // ESI Badge
-  el.esiBadgeDisplay.className = `esi-badge esi-${assess.esi_level}`;
+  el.esiBadgeDisplay.className = `esi-tag esi-${assess.esi_level}`;
   el.esiBadgeDisplay.textContent = assess.triage_status;
   el.esiDispositionText.textContent = assess.recommended_disposition;
   el.triagePhaseBadge.textContent = data.current_phase;
@@ -818,27 +802,35 @@ function updateTriageHUD(data) {
     el.oldcartSeverity.classList.add("empty");
   }
 
-  // Differentials
+  // Differentials with Bayesian Probability Progress Bars
   el.diffListContainer.innerHTML = "";
   if (assess.differentials && assess.differentials.length > 0) {
     assess.differentials.forEach(diff => {
-      const item = document.createElement("div");
-      item.className = "diff-item";
-      item.innerHTML = `
-        <div class="diff-header">
+      const probPct = diff.probability_percentage || (diff.probability === 'High' ? 88 : (diff.probability === 'Moderate' ? 10 : 2));
+      const isHigh = probPct > 50;
+
+      const card = document.createElement("div");
+      card.className = "diff-card";
+      card.innerHTML = `
+        <div class="diff-card-head">
           <span>${diff.condition_name}</span>
-          <span class="diff-icd">${diff.icd10_code}</span>
+          <span class="diff-icd-chip">${diff.icd10_code}</span>
         </div>
-        <div class="diff-meta">
-          <strong>Probability: ${diff.probability}</strong> • ${diff.justification}
+        <div class="diff-prob-track">
+          <div class="diff-prob-fill ${isHigh ? 'high' : ''}" style="width: ${probPct}%;"></div>
         </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-code);">
+          <span style="color: ${isHigh ? 'var(--clinical-rose)' : 'var(--clinical-cyan)'}; font-weight: 700;">${probPct}% Probability</span>
+          <span style="color: var(--text-dim);">${diff.organ_system || 'General'}</span>
+        </div>
+        <div class="diff-meta-desc">${diff.justification}</div>
       `;
-      el.diffListContainer.appendChild(item);
+      el.diffListContainer.appendChild(card);
     });
   }
 
   if (data.extracted_biomarkers && data.extracted_biomarkers.length > 0) {
-    renderBiomarkerTable(data.extracted_biomarkers);
+    renderScanUpGauges(data.extracted_biomarkers);
   }
 }
 
@@ -854,7 +846,7 @@ function setOldcartVal(elem, value) {
 }
 
 function resetTriageHUD() {
-  el.esiBadgeDisplay.className = "esi-badge esi-3";
+  el.esiBadgeDisplay.className = "esi-tag esi-3";
   el.esiBadgeDisplay.textContent = "ESI-3 URGENT";
   el.esiDispositionText.textContent = "Awaiting clinical symptom assessment and OLD CARTS parameters.";
   el.triagePhaseBadge.textContent = "INTAKE";
@@ -867,14 +859,85 @@ function resetTriageHUD() {
   el.oldcartSeverity.classList.add("empty");
 
   el.diffListContainer.innerHTML = `
-    <div class="diff-item">
-      <div class="diff-header">
+    <div class="diff-card">
+      <div class="diff-card-head">
         <span>Awaiting symptom report</span>
-        <span class="diff-icd">Z00.00</span>
+        <span class="diff-icd-chip">Z00.00</span>
       </div>
-      <div class="diff-meta">Start dialogue to generate differentials.</div>
+      <div class="diff-meta-desc">Speak or type symptoms to calculate Bayesian differential probabilities.</div>
     </div>
   `;
+}
+
+
+// --- SCANUP VISUAL PATHOLOGY GAUGES (Inspired by Sehatlings Muaina) ---
+async function extractBiomarkersFromText(clinicalText) {
+  try {
+    const res = await fetch("/api/triage/biomarkers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        encounter_id: state.encounterId,
+        clinical_text: clinicalText
+      })
+    });
+
+    if (!res.ok) throw new Error("Biomarker extraction failed");
+    const data = await res.json();
+
+    state.extractedBiomarkers = data.biomarkers;
+    renderScanUpGauges(data.biomarkers);
+
+    el.bioOrganAlertCount.textContent = `${data.critical_count} Critical Derangement(s)`;
+    el.bioOrganAlertCount.style.color = data.critical_count > 0 ? "var(--clinical-rose)" : "var(--clinical-emerald)";
+
+  } catch (err) {
+    console.error("ScanUp lab error:", err);
+    alert("Biomarker extraction error: " + err.message);
+  }
+}
+
+function renderScanUpGauges(biomarkers) {
+  if (!el.biomarkerGaugesGrid) return;
+  if (!biomarkers || biomarkers.length === 0) {
+    el.biomarkerGaugesGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; color: var(--text-dim); padding: 48px;">
+        No biomarkers parsed yet.
+      </div>
+    `;
+    return;
+  }
+
+  el.biomarkerGaugesGrid.innerHTML = "";
+  biomarkers.forEach(b => {
+    // Calculate gauge pointer position: 0% to 100%
+    const maxVal = b.reference_high * 2.0;
+    const pct = Math.min(94, Math.max(6, (b.value / (maxVal || 1.0)) * 100));
+
+    const card = document.createElement("div");
+    card.className = "bio-gauge-card";
+    card.innerHTML = `
+      <div class="bio-card-top">
+        <span class="bio-test-title">${b.name} (${b.test_code})</span>
+        <span class="bio-loinc-badge">LOINC: ${b.loinc_code}</span>
+      </div>
+      <div class="bio-value-row">
+        <span class="bio-measured-num">${b.value} <span style="font-size: 13px; color: var(--text-secondary); font-weight: normal;">${b.unit}</span></span>
+        <span class="bio-status-pill status-${b.status}">${b.status}</span>
+      </div>
+      
+      <!-- Visual Reference Interval Slider Track -->
+      <div class="reference-slider-track">
+        <div class="gauge-pointer-needle" style="left: ${pct}%;"></div>
+      </div>
+      <div class="reference-bounds-label">
+        <span>Low: ${b.reference_low} ${b.unit}</span>
+        <span>High: ${b.reference_high} ${b.unit}</span>
+      </div>
+      <div class="bio-interp-text">${b.clinical_interpretation}</div>
+    `;
+    el.biomarkerGaugesGrid.appendChild(card);
+  });
 }
 
 
@@ -917,8 +980,8 @@ async function generateSOAPNote() {
       el.soapRenderedContent.innerText = note.markdown_formatted;
     }
 
-    // Automatically trigger grounding audit
     auditLinkedEvidence();
+    compileFHIRBundle();
 
   } catch (err) {
     console.error("SOAP note error:", err);
@@ -929,10 +992,7 @@ async function generateSOAPNote() {
 
 // --- LINKED EVIDENCE AUDIT (ABRIDGE ARCHITECTURE) ---
 async function auditLinkedEvidence() {
-  if (!state.lastSoapNote) {
-    await generateSOAPNote();
-    if (!state.lastSoapNote) return;
-  }
+  if (!state.lastSoapNote) return;
 
   try {
     const res = await fetch("/api/triage/grounding", {
@@ -948,22 +1008,18 @@ async function auditLinkedEvidence() {
     const data = await res.json();
 
     el.evidenceScoreBadge.textContent = `INTEGRITY ${data.grounding_integrity_percentage}%`;
-    el.evidenceScoreBadge.className = `calc-badge ${data.hallucination_risk_level === 'ZERO_DETECTED' ? 'risk-low' : 'risk-mod'}`;
 
     el.evidenceListContainer.innerHTML = "";
     data.anchors.forEach(a => {
       const item = document.createElement("div");
-      item.style.background = "var(--bg-card)";
-      item.style.padding = "8px 10px";
-      item.style.borderRadius = "4px";
-      item.style.border = "1px solid var(--border-subtle)";
+      item.className = "evidence-card-item";
       item.innerHTML = `
-        <div style="display: flex; justify-content: space-between; font-weight: 700; color: #fff; margin-bottom: 2px;">
-          <span style="color: var(--neon-cyan); font-family: var(--font-mono);">[${a.target_section}]</span>
-          <span style="font-size: 10px; color: var(--neon-green); font-family: var(--font-mono);">Score: ${Math.round(a.confidence_score * 100)}%</span>
+        <div style="display: flex; justify-content: space-between; font-weight: 700; color: #fff;">
+          <span style="color: var(--clinical-cyan); font-family: var(--font-code);">[${a.target_section}]</span>
+          <span style="font-size: 11px; color: var(--clinical-emerald); font-family: var(--font-code);">${Math.round(a.confidence_score * 100)}% Match</span>
         </div>
-        <div style="font-size: 11px; color: #e2e8f0; margin-bottom: 4px;">${a.clinical_claim}</div>
-        <div style="font-size: 11px; color: var(--text-dim); font-style: italic; border-left: 2px solid var(--neon-cyan); padding-left: 6px;">
+        <div style="font-size: 12px; color: #e2e8f0;">${a.clinical_claim}</div>
+        <div style="font-size: 11px; color: var(--text-muted); font-style: italic; border-left: 2px solid var(--clinical-cyan); padding-left: 6px;">
           "${a.verbatim_transcript_quote}"
         </div>
       `;
@@ -976,7 +1032,7 @@ async function auditLinkedEvidence() {
 }
 
 
-// --- CLINICAL CALCULATORS (HEART, Wells, qSOFA, GCS) ---
+// --- CLINICAL CALCULATORS (HEART & Wells PE) ---
 async function runHeartScoreCalculation() {
   try {
     const payload = {
@@ -998,7 +1054,6 @@ async function runHeartScoreCalculation() {
     document.getElementById("heartScoreBadge").textContent = `Score: ${data.total_score} / 10`;
     const tag = document.getElementById("heartRiskTag");
     tag.textContent = `${data.risk_category} (${data.total_score} pts)`;
-    tag.className = `calc-risk-tag ${data.total_score >= 7 ? 'risk-high' : (data.total_score >= 4 ? 'risk-mod' : 'risk-low')}`;
     document.getElementById("heartExpText").textContent = `${data.mace_six_week_rate}. ${data.recommended_pathway}`;
 
   } catch (err) {
@@ -1029,7 +1084,6 @@ async function runWellsPECalculation() {
     document.getElementById("wellsScoreBadge").textContent = `Score: ${data.total_score}`;
     const tag = document.getElementById("wellsRiskTag");
     tag.textContent = `${data.pe_probability_two_tier} (${data.total_score} pts)`;
-    tag.className = `calc-risk-tag ${data.total_score > 4.0 ? 'risk-high' : 'risk-low'}`;
     document.getElementById("wellsExpText").textContent = `${data.pe_probability_three_tier}. ${data.recommended_workup}`;
 
   } catch (err) {
@@ -1037,59 +1091,6 @@ async function runWellsPECalculation() {
   }
 }
 
-async function runQsofaCalculation() {
-  try {
-    const payload = {
-      respiratory_rate: parseInt(document.getElementById("qsofaRR").value, 10) || 22,
-      systolic_bp: parseInt(document.getElementById("qsofaSBP").value, 10) || 95,
-      altered_mentation: document.getElementById("qsofaGCS").checked
-    };
-
-    const res = await fetch("/api/calculators/qsofa", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-
-    document.getElementById("qsofaBadge").textContent = `Score: ${data.score} / 3`;
-    const tag = document.getElementById("qsofaRiskTag");
-    tag.textContent = `${data.sepsis_risk_category} (${data.score}/3)`;
-    tag.className = `calc-risk-tag ${data.score >= 2 ? 'risk-high' : 'risk-low'}`;
-    document.getElementById("qsofaExpText").textContent = `${data.in_hospital_mortality_alert} ${data.recommended_management}`;
-
-  } catch (err) {
-    console.error("qSOFA calc error:", err);
-  }
-}
-
-async function runGcsCalculation() {
-  try {
-    const payload = {
-      eye_opening: parseInt(document.getElementById("gcsEye").value, 10),
-      verbal_response: parseInt(document.getElementById("gcsVerbal").value, 10),
-      motor_response: parseInt(document.getElementById("gcsMotor").value, 10)
-    };
-
-    const res = await fetch("/api/calculators/gcs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-
-    document.getElementById("gcsBadge").textContent = `Score: ${data.total_score} / 15`;
-    const tag = document.getElementById("gcsRiskTag");
-    tag.textContent = `${data.tbi_severity} (${data.total_score}/15)`;
-    tag.className = `calc-risk-tag ${data.total_score <= 8 ? 'risk-high' : (data.total_score <= 12 ? 'risk-mod' : 'risk-low')}`;
-    document.getElementById("gcsExpText").textContent = `${data.clinical_risk} ${data.airway_compromise_risk ? '⚠️ High risk of acute airway compromise; intubation precautions indicated.' : ''}`;
-
-  } catch (err) {
-    console.error("GCS calc error:", err);
-  }
-}
 
 // --- RX SAFETY CHECKER ---
 async function runRxSafetyCheck() {
@@ -1112,7 +1113,7 @@ async function runRxSafetyCheck() {
     el.rxAlertsList.innerHTML = "";
     if (data.alerts.length === 0) {
       el.rxAlertsList.innerHTML = `
-        <div style="background: rgba(0, 229, 153, 0.1); border: 1px solid var(--neon-green); color: var(--neon-green); padding: 10px 14px; border-radius: 6px; font-size: 12px;">
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--clinical-emerald); color: var(--clinical-emerald); padding: 10px 14px; border-radius: 6px; font-size: 13px;">
           ✓ All proposed medications cleared. No contraindications or cross-reactivity detected.
         </div>
       `;
@@ -1121,17 +1122,17 @@ async function runRxSafetyCheck() {
 
     data.alerts.forEach(a => {
       const card = document.createElement("div");
-      card.className = `rx-alert-card rx-alert-${a.severity}`;
+      card.className = `rx-alert-banner rx-alert-${a.severity}`;
       card.innerHTML = `
-        <div class="rx-alert-header">
-          <span style="color: ${a.severity === 'CRITICAL_AVOID' ? 'var(--neon-red)' : 'var(--neon-amber)'};">
+        <div style="display: flex; justify-content: space-between; font-weight: 700; font-family: var(--font-code);">
+          <span style="color: ${a.severity === 'CRITICAL_AVOID' ? 'var(--clinical-rose)' : 'var(--clinical-amber)'};">
             ${a.severity === 'CRITICAL_AVOID' ? '🚨 CRITICAL CONTRAINDICATION' : '⚠️ CROSS-REACTIVITY / INTERACTION'} — ${a.trigger_drug.toUpperCase()}
           </span>
           <span style="font-size: 11px; opacity: 0.8;">${a.alert_type}</span>
         </div>
         <div style="color: #fff;"><strong>Trigger:</strong> ${a.offending_factor}</div>
-        <div style="color: #cbd5e1; font-size: 11px;">${a.clinical_mechanism}</div>
-        <div style="color: var(--neon-green); font-size: 11px; margin-top: 2px;">
+        <div style="color: #cbd5e1; font-size: 12px;">${a.clinical_mechanism}</div>
+        <div style="color: var(--clinical-emerald); font-size: 12px; margin-top: 2px;">
           <strong>Safe Alternative:</strong> ${a.recommended_safe_alternative}
         </div>
       `;
@@ -1141,62 +1142,6 @@ async function runRxSafetyCheck() {
   } catch (err) {
     console.error("Rx check error:", err);
   }
-}
-
-
-// --- BIOMARKER LAB EXTRACTION (Sehatlings-Muaina Inspiration) ---
-async function extractBiomarkersFromText(clinicalText) {
-  try {
-    const res = await fetch("/api/triage/biomarkers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        encounter_id: state.encounterId,
-        clinical_text: clinicalText
-      })
-    });
-
-    if (!res.ok) throw new Error("Biomarker extraction failed");
-    const data = await res.json();
-
-    state.extractedBiomarkers = data.biomarkers;
-    renderBiomarkerTable(data.biomarkers);
-
-    el.bioOrganAlertCount.textContent = `${data.critical_count} Critical Alert(s)`;
-    el.bioOrganAlertCount.style.color = data.critical_count > 0 ? "var(--neon-red)" : "var(--neon-green)";
-
-  } catch (err) {
-    console.error("Biomarker lab error:", err);
-    alert("Biomarker extraction error: " + err.message);
-  }
-}
-
-function renderBiomarkerTable(biomarkers) {
-  if (!el.biomarkerTableBody) return;
-  if (!biomarkers || biomarkers.length === 0) {
-    el.biomarkerTableBody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 24px;">
-          No biomarkers parsed.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  el.biomarkerTableBody.innerHTML = "";
-  biomarkers.forEach(b => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><strong>${b.name}</strong> (${b.test_code})</td>
-      <td><code>${b.loinc_code}</code></td>
-      <td><strong style="color: #fff;">${b.value} ${b.unit}</strong></td>
-      <td style="color: var(--text-muted);">${b.reference_low} – ${b.reference_high} ${b.unit}</td>
-      <td><span class="bio-status-badge bio-status-${b.status}">${b.status}</span></td>
-      <td style="font-size: 12px; color: #cbd5e1;">${b.clinical_interpretation}</td>
-    `;
-    el.biomarkerTableBody.appendChild(tr);
-  });
 }
 
 
@@ -1223,11 +1168,25 @@ async function generatePatientAVS() {
     const avs = await res.json();
     state.lastAvs = avs;
 
-    if (typeof marked !== "undefined") {
-      el.avsRenderedContent.innerHTML = marked.parse(avs.formatted_document_markdown);
-    } else {
-      el.avsRenderedContent.innerText = avs.formatted_document_markdown;
-    }
+    // Render in modal preview
+    el.printableChartBody.innerHTML = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; line-height: 1.6; padding: 20px;">
+        <h2 style="font-size: 22px; color: #0284c7; margin-bottom: 12px;">Patient Care Summary & Home Instructions</h2>
+        <div style="font-size: 14px; color: #334155; margin-bottom: 16px;">${avs.what_happened_today}</div>
+        <h3 style="font-size: 16px; color: #dc2626; margin-top: 16px;">⚠️ Warning Signs (When to Call 911):</h3>
+        <ul style="padding-left: 20px; font-size: 13px;">
+          ${avs.emergency_danger_signs.map(s => `<li>${s}</li>`).join("")}
+        </ul>
+        <h3 style="font-size: 16px; color: #059669; margin-top: 16px;">💊 Medication Instructions:</h3>
+        <ul style="padding-left: 20px; font-size: 13px;">
+          ${avs.medications_instructions.map(m => `<li>${m}</li>`).join("")}
+        </ul>
+        <div style="margin-top: 20px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; color: #64748b;">
+          Triage Verification Code: <strong>${avs.telehealth_verification_code}</strong> | Encounter ID: <strong>${avs.encounter_id}</strong>
+        </div>
+      </div>
+    `;
+    el.chartModalOverlay.classList.add("active");
 
   } catch (err) {
     console.error("AVS generation error:", err);
@@ -1242,14 +1201,13 @@ function openPrintableChartModal() {
 
   const p = state.patientProfile;
   const a = state.latestAssessment;
-  const note = state.lastSoapNote;
 
   el.printableChartBody.innerHTML = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; line-height: 1.5; padding: 20px;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; line-height: 1.5; padding: 10px;">
       <div style="border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
-          <h1 style="font-size: 22px; margin: 0 0 4px 0; letter-spacing: -0.5px;">VAANI CLINICAL HEALTH SYSTEM</h1>
-          <div style="font-size: 13px; color: #555;">EMERGENCY TELEMEDICINE & CLINICAL TELEPHONY TRIAGE SERVICE</div>
+          <h1 style="font-size: 22px; margin: 0 0 4px 0; letter-spacing: -0.5px;">SAINT JUDE EMERGENCY HEALTH ENCLAVE</h1>
+          <div style="font-size: 13px; color: #555;">VAANI CLINICAL TELEMEDICINE & EMERGENCY TRIAGE SERVICE</div>
         </div>
         <div style="text-align: right; font-size: 12px; font-family: monospace;">
           <strong>ENCOUNTER ID:</strong> ${state.encounterId}<br>
@@ -1257,14 +1215,14 @@ function openPrintableChartModal() {
         </div>
       </div>
 
-      <div style="background: #f4f6f8; border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 16px; display: grid; grid-template-columns: 2fr 1fr 1fr;">
+      <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 4px; margin-bottom: 16px; display: grid; grid-template-columns: 2fr 1fr 1fr;">
         <div><strong>Patient Name:</strong> ${p.name} | <strong>MRN:</strong> ${p.mrn}</div>
         <div><strong>Age / Sex:</strong> ${p.age || 'Unspecified'} / ${p.biological_sex.toUpperCase()}</div>
         <div><strong>Triage Rating:</strong> <span style="background: #000; color: #fff; padding: 2px 6px; font-size: 11px; font-weight: bold;">${a.triage_status}</span></div>
       </div>
 
       <div style="margin-bottom: 14px;">
-        <h3 style="font-size: 15px; margin: 0 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 2px;">HISTORY OF PRESENT ILLNESS (OLD CARTS)</h3>
+        <h3 style="font-size: 14px; margin: 0 0 6px 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">HISTORY OF PRESENT ILLNESS (OLD CARTS)</h3>
         <p style="font-size: 13px; margin: 0 0 6px 0;"><strong>Chief Complaint:</strong> ${a.chief_complaint}</p>
         <p style="font-size: 13px; margin: 0 0 6px 0;">
           Onset: ${a.hpi.onset || 'Unspecified'} | Location: ${a.hpi.location || 'Unspecified'} | Duration: ${a.hpi.duration || 'Unspecified'}<br>
@@ -1273,7 +1231,7 @@ function openPrintableChartModal() {
       </div>
 
       <div style="margin-bottom: 14px;">
-        <h3 style="font-size: 15px; margin: 0 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 2px;">DIAGNOSTIC ASSESSMENT & ICD-10-CM</h3>
+        <h3 style="font-size: 14px; margin: 0 0 6px 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">DIAGNOSTIC ASSESSMENT & ICD-10-CM</h3>
         <p style="font-size: 13px; margin: 0 0 6px 0;">
           <strong>Primary Working Diagnosis:</strong> ${a.differentials[0] ? a.differentials[0].condition_name : 'Acute Symptom Complex'} 
           (ICD-10: <code>${a.differentials[0] ? a.differentials[0].icd10_code : 'R69'}</code>)
@@ -1281,13 +1239,13 @@ function openPrintableChartModal() {
       </div>
 
       <div style="margin-bottom: 14px;">
-        <h3 style="font-size: 15px; margin: 0 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 2px;">RECOMMENDED PLAN & DISPOSITION</h3>
+        <h3 style="font-size: 14px; margin: 0 0 6px 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px;">RECOMMENDED PLAN & DISPOSITION</h3>
         <p style="font-size: 13px; margin: 0 0 6px 0;"><strong>Disposition:</strong> ${a.recommended_disposition}</p>
       </div>
 
       <div style="border-top: 1px dashed #999; padding-top: 10px; font-size: 11px; color: #666; display: flex; justify-content: space-between;">
-        <span>Document Electronically Signed via Vaani Clinical CDS Engine</span>
-        <span>HL7 FHIR Release 4 Compliant</span>
+        <span>Document Electronically Authenticated via Vaani Clinical CDS Engine</span>
+        <span>HL7 FHIR Release 4 Transaction Compliant</span>
       </div>
     </div>
   `;
@@ -1298,10 +1256,7 @@ function openPrintableChartModal() {
 
 // --- HL7 FHIR RELEASE 4 COMPILATION ---
 async function compileFHIRBundle() {
-  if (!state.latestAssessment) {
-    alert("Please initiate a clinical encounter or scenario first.");
-    return;
-  }
+  if (!state.latestAssessment) return;
 
   try {
     const payload = {
@@ -1326,7 +1281,6 @@ async function compileFHIRBundle() {
 
   } catch (err) {
     console.error("FHIR error:", err);
-    alert("FHIR generation error: " + err.message);
   }
 }
 
@@ -1343,19 +1297,19 @@ async function loadPresetScenarios() {
 
     scenarios.forEach(sc => {
       const card = document.createElement("div");
-      card.className = "scenario-card";
+      card.className = "case-card";
       card.innerHTML = `
-        <div class="scenario-badge-row">
-          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--neon-cyan);">${sc.specialty}</span>
-          <span class="esi-badge esi-${sc.esi_level}" style="font-size: 11px; padding: 2px 8px;">ESI-${sc.esi_level}</span>
+        <div class="case-card-head">
+          <span class="case-specialty-badge">${sc.specialty}</span>
+          <span class="esi-tag esi-${sc.esi_level}" style="font-size: 11px; padding: 2px 8px;">ESI-${sc.esi_level}</span>
         </div>
-        <div class="scenario-title">${sc.title}</div>
-        <div class="scenario-desc">${sc.chief_complaint}</div>
-        <div style="font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);">
+        <div class="case-card-title">${sc.title}</div>
+        <div class="case-card-desc">${sc.chief_complaint}</div>
+        <div style="font-size: 11px; color: var(--text-dim); font-family: var(--font-code);">
           Patient: ${sc.patient_profile.name} (${sc.patient_profile.age} yo ${sc.patient_profile.biological_sex})
         </div>
-        <button class="btn-ctrl" style="margin-top: 8px; justify-content: center; color: var(--neon-cyan);">
-          ▶ LOAD & EXECUTE SCENARIO
+        <button class="btn-action" style="margin-top: 8px; justify-content: center; color: var(--clinical-cyan); border-color: rgba(0, 229, 255, 0.3);">
+          ▶ LOAD & EXECUTE CASE
         </button>
       `;
 
@@ -1377,7 +1331,6 @@ async function applyScenario(sc) {
   state.dialogueHistory = [];
   updatePatientHUD();
 
-  // If scenario is cardiac or asthma, update rhythm
   if (sc.id === "scenario-stemi-cardiac") {
     document.querySelector('[data-rhythm="STEMI"]').click();
   } else if (sc.id === "scenario-asthma-bronchospasm") {
@@ -1387,16 +1340,16 @@ async function applyScenario(sc) {
   }
 
   el.dialogueStream.innerHTML = `
-    <div class="msg-row agent">
-      <div class="msg-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
-      <div class="msg-bubble">
+    <div class="message-bubble-row agent">
+      <div class="bubble-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
+      <div class="bubble-text">
         Hello, this is the Vaani Clinical Triage Service. I am an intelligent clinical receptionist. 
         Please describe what symptoms or medical emergency you are experiencing today.
       </div>
     </div>
   `;
 
-  document.querySelector('[data-target="workspace-triage"]').click();
+  document.querySelector('[data-target="suite-telephony"]').click();
 
   for (const msg of sc.sample_dialogue) {
     await sendPatientMessage(msg.content);
@@ -1410,7 +1363,6 @@ async function applyScenario(sc) {
 
   setTimeout(async () => {
     await generateSOAPNote();
-    await generatePatientAVS();
     await compileFHIRBundle();
   }, 800);
 }

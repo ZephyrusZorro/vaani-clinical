@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vaani Clinical (वाणी) — Real-Time Telephony & Medical Triage Intelligence</title>
+  <title>Vaani Clinical (वाणी) — Enterprise Clinical Intelligence & Telemetry Platform</title>
   <link rel="stylesheet" href="css/vaani.css">
   <!-- Markdown parser for clinical notes -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -11,257 +11,260 @@
 <body>
 
   <!-- ========================================================================
-       WINDOW MANAGER TOP BAR (.dbar)
+       ENTERPRISE CLINICAL COMMAND SUITE HEADER
        ======================================================================== -->
-  <header class="dbar">
-    <div class="dbar-left">
-      <div class="window-dots">
-        <span class="dot dot-red"></span>
-        <span class="dot dot-yellow"></span>
-        <span class="dot dot-green"></span>
-      </div>
-      <div class="prompt-badge">
-        <span class="logo">VAANI<span>.CLINICAL</span></span>
-        <span class="prompt-path">clinician@vaani:~$ /sys/triage/telephony.daemon --telemetry-live</span>
+  <header class="hospital-header">
+    <div class="brand-suite">
+      <div class="brand-pulse-icon">🫀</div>
+      <div class="brand-title-wrap">
+        <div class="brand-title">
+          VAANI CLINICAL <span class="hindi-title">वाणी</span>
+        </div>
+        <div class="brand-subtitle">Autonomous Clinical Telephony & Emergency Triage Platform</div>
       </div>
     </div>
-    <div class="dbar-right">
-      <div class="telemetry-status">
-        <span class="pulse-indicator"></span>
-        <span>TELEMETRY ONLINE [127.0.0.1:8001]</span>
+
+    <div class="hospital-trust-badge">
+      <span class="trust-dot"></span>
+      <span>SAINT JUDE EMERGENCY HEALTH ENCLAVE • ABDM & HIPAA LEVEL-3 ENCRYPTED</span>
+    </div>
+
+    <div class="clinician-status-badge">
+      <div class="clinician-avatar">FR</div>
+      <div class="clinician-info">
+        <span class="clinician-name">Dr. Faris Ruknuddin, MD</span>
+        <span class="clinician-role">CHIEF TRIAGE DIRECTOR</span>
       </div>
-      <div class="digital-clock" id="clockDisplay">00:00:00 UTC</div>
+      <div class="digital-time-clock" id="clockDisplay">00:00:00 UTC</div>
     </div>
   </header>
 
   <!-- ========================================================================
-       CARDIAC ECG MONITOR & PATIENT TELEMETRY STRIP
+       ICU MULTI-PARAMETER PATIENT TELEMETRY MONITOR
        ======================================================================== -->
-  <section class="telemetry-strip">
-    <div class="patient-hud">
-      <div class="hud-title">ACTIVE TELEPHONY SESSION</div>
-      <div class="hud-name">
-        <span id="hudPatientName">Robert Vance</span>
-        <span class="hud-mrn" id="hudPatientMRN">MRN-CV-88219</span>
+  <section class="icu-telemetry-hub">
+    
+    <!-- Patient Identity Card -->
+    <div class="patient-identity-card">
+      <div class="identity-header">
+        <span class="patient-name-display" id="hudPatientName">Robert Vance</span>
+        <span class="patient-mrn-badge" id="hudPatientMRN">MRN-CV-88219</span>
       </div>
-      <div class="hud-demographics" id="hudDemographics">62 yo • Male • Allergies: Penicillin (Anaphylaxis)</div>
+      <div class="patient-demographics-text" id="hudDemographics">
+        62 yo • Male • Allergies: Penicillin (Anaphylaxis), Aspirin
+      </div>
     </div>
 
-    <div class="ecg-container" style="height: auto;">
-      <div class="ecg-overlay-text">
+    <!-- Lead II ECG Waveform Monitor Frame with Arrhythmia Switcher -->
+    <div class="ecg-monitor-frame">
+      <div class="ecg-overlay-header">
         <span>LEAD II ECG</span>
-        <span id="ecgHeartRate">HR: 88 BPM</span>
+        <span id="ecgHeartRate">HR: 118 BPM</span>
         <span id="ecgRhythm">SINUS TACHYCARDIA</span>
       </div>
-      <canvas id="ecgCanvas" style="height: 54px; width: 100%; display: block;"></canvas>
-      <div class="ecg-ctrl-bar">
-        <div class="ecg-rhythm-buttons">
-          <button class="rhythm-btn" data-rhythm="NSR" data-hr="72">NSR 72</button>
-          <button class="rhythm-btn active" data-rhythm="TACHY" data-hr="118">TACHY 118</button>
-          <button class="rhythm-btn" data-rhythm="STEMI" data-hr="94">STEMI 94</button>
-          <button class="rhythm-btn" data-rhythm="AFIB" data-hr="130">AFIB 130</button>
-          <button class="rhythm-btn" data-rhythm="VFIB" data-hr="0">VFIB ARREST</button>
+      <canvas id="ecgCanvas"></canvas>
+      <div class="arrhythmia-bar">
+        <div class="rhythm-pills">
+          <button class="rhythm-pill" data-rhythm="NSR" data-hr="72">NSR 72</button>
+          <button class="rhythm-pill active" data-rhythm="TACHY" data-hr="118">TACHY 118</button>
+          <button class="rhythm-pill" data-rhythm="STEMI" data-hr="94">STEMI ELEV 94</button>
+          <button class="rhythm-pill" data-rhythm="AFIB" data-hr="130">AFIB 130</button>
+          <button class="rhythm-pill" data-rhythm="VFIB" data-hr="0">VFIB ARREST</button>
         </div>
-        <div class="hr-slider-wrap">
-          <span style="color: var(--text-dim); font-size: 10px;">HR:</span>
-          <input type="range" id="hrRangeSlider" min="40" max="180" value="88">
-          <span id="hrSliderVal" style="color: var(--neon-green); font-weight: 700; width: 28px;">88</span>
+        <div class="hr-slider-group">
+          <span style="color: var(--text-dim); font-size: 10px;">BPM:</span>
+          <input type="range" id="hrRangeSlider" min="40" max="180" value="118">
+          <span id="hrSliderVal" style="color: var(--clinical-emerald); font-weight: 700; width: 28px;">118</span>
         </div>
       </div>
     </div>
 
-    <div class="vitals-quick-hud">
-      <div class="vital-item">
-        <span class="vital-label">NIBP</span>
-        <span class="vital-val danger" id="vitalBP">152/94</span>
+    <!-- Digital Vitals Cluster -->
+    <div class="vitals-meter-cluster">
+      <div class="vital-box">
+        <span class="vital-box-label">NIBP (mmHg)</span>
+        <span class="vital-box-value danger" id="vitalBP">152/94</span>
       </div>
-      <div class="vital-item">
-        <span class="vital-label">SpO2</span>
-        <span class="vital-val normal" id="vitalSpO2">96%</span>
+      <div class="vital-box">
+        <span class="vital-box-label">SpO2</span>
+        <span class="vital-box-value normal" id="vitalSpO2">96%</span>
       </div>
-      <div class="vital-item">
-        <span class="vital-label">RR</span>
-        <span class="vital-val" id="vitalRR">22</span>
+      <div class="vital-box">
+        <span class="vital-box-label">RESP (Br/m)</span>
+        <span class="vital-box-value warn" id="vitalRR">22</span>
       </div>
-      <div class="vital-item">
-        <span class="vital-label">TEMP</span>
-        <span class="vital-val" id="vitalTemp">37.2°C</span>
+      <div class="vital-box">
+        <span class="vital-box-label">TEMP</span>
+        <span class="vital-box-value" id="vitalTemp">37.2°C</span>
       </div>
     </div>
+
   </section>
 
   <!-- ========================================================================
-       WORKSPACE TAB NAVIGATION (7 WORKSPACES)
+       SEHATLINGS MUAINA PRODUCT SUITE TABS
        ======================================================================== -->
-  <nav class="workspace-tabs">
-    <button class="tab-btn active" data-target="workspace-triage">
-      <span>📞</span> [1: CALL_TRIAGE]
+  <nav class="product-suite-tabs">
+    <button class="suite-tab-btn active" data-target="suite-telephony">
+      <span>🎙️</span> [1: DAKTARI AI TELEPHONY]
     </button>
-    <button class="tab-btn" data-target="workspace-soap">
-      <span>📋</span> [2: SOAP_NOTE_STUDIO]
+    <button class="suite-tab-btn" data-target="suite-pathology">
+      <span>🧪</span> [2: SCANUP PATHOLOGY LAB]
     </button>
-    <button class="tab-btn" data-target="workspace-labs">
-      <span>🧪</span> [3: BIOMARKER_LAB]
+    <button class="suite-tab-btn" data-target="suite-decision">
+      <span>🛡️</span> [3: ONE-TAP-GO TRIAGE & RX SAFETY]
     </button>
-    <button class="tab-btn" data-target="workspace-safety">
-      <span>🛡️</span> [4: RX_SAFETY_&_RISK]
+    <button class="suite-tab-btn" data-target="suite-scribe">
+      <span>📋</span> [4: EHR AMBIENT SCRIBE & FHIR]
     </button>
-    <button class="tab-btn" data-target="workspace-avs">
-      <span>📄</span> [5: PATIENT_AVS_CHART]
-    </button>
-    <button class="tab-btn" data-target="workspace-fhir">
-      <span>🌐</span> [6: FHIR_EXPLORER]
-    </button>
-    <button class="tab-btn" data-target="workspace-simulator">
-      <span>⚡</span> [7: CLINICAL_SIMULATOR]
+    <button class="suite-tab-btn" data-target="suite-simulator">
+      <span>⚡</span> [5: CLINICAL SIMULATOR]
     </button>
   </nav>
 
   <!-- ========================================================================
        MAIN VIEWPORT WORKSPACES
        ======================================================================== -->
-  <main class="main-viewport">
+  <main class="suite-viewport">
 
-    <!-- WORKSPACE 1: CALL TRIAGE & TELEPHONY -->
-    <section id="workspace-triage" class="workspace-panel active">
-      <div class="triage-grid">
+    <!-- SUITE 1: DAKTARI AI TELEPHONY & TRIAGE -->
+    <section id="suite-telephony" class="suite-panel active">
+      <div class="triage-workspace-grid">
         
-        <!-- Left: Telephony Chat Window -->
-        <div class="chat-telephony-window">
-          <div class="window-header">
-            <div class="window-title">
-              <span>VOICE INTAKE CHANNEL (ENCOUNTER: <strong id="currentEncounterId">ENC-88219</strong>)</span>
+        <!-- Left: Softphone Call Dock -->
+        <div class="glass-panel telephony-card">
+          <div class="telephony-header">
+            <div class="call-badge-live">
+              <span class="trust-dot"></span>
+              <span>INCOMING ENCOUNTER: <strong id="currentEncounterId" style="color: #fff;">ENC-88219</strong></span>
             </div>
-            <div class="telephony-controls">
-              <button class="btn-ctrl" id="ttsToggleBtn">
+            <div class="softphone-controls">
+              <button class="btn-action" id="ttsToggleBtn">
                 <span id="ttsIcon">🔊</span> <span id="ttsStatus">TTS: ACTIVE</span>
               </button>
-              <button class="btn-ctrl" id="liveMicBtn">
+              <button class="btn-action" id="liveMicBtn">
                 <span>🎙️</span> <span id="micStatus">LIVE MIC STT</span>
               </button>
-              <button class="btn-ctrl" id="dtmfToggleBtn">
+              <button class="btn-action" id="dtmfToggleBtn">
                 <span>🔢</span> DIAL PAD
               </button>
-              <button class="btn-ctrl" id="resetCallBtn">
+              <button class="btn-action" id="resetCallBtn">
                 <span>🔄</span> NEW CALL
               </button>
             </div>
           </div>
 
-          <!-- Red Flag Emergency Alert Banner -->
-          <div class="emergency-banner hidden" id="emergencyBanner">
-            <div class="emergency-info">
-              <div class="emergency-icon">🚨</div>
-              <div class="emergency-text">
-                <strong id="emergencyTitle">EMERGENCY PROTOCOL ACTIVATED</strong><br>
-                <span id="emergencyAction">Dispatch EMS (911) immediately. Patient in high-acuity critical risk state.</span>
+          <!-- Red-Flag Emergency Banner -->
+          <div class="redflag-banner hidden" id="emergencyBanner">
+            <div class="redflag-content">
+              <div class="redflag-icon">🚨</div>
+              <div class="redflag-text">
+                <strong id="emergencyTitle">CRITICAL ACUTE CORONARY ALERT</strong><br>
+                <span id="emergencyAction">Substernal crushing chest pain radiating to left arm. Dispatch EMS 911 immediately.</span>
               </div>
             </div>
-            <button class="btn-code-red" id="escalate911Btn">⚡ ESCALATE EMS (911)</button>
+            <button class="btn-code-red" id="escalate911Btn">⚡ DISPATCH EMS (911)</button>
           </div>
 
-          <!-- Dialogue Stream -->
-          <div class="dialogue-stream" id="dialogueStream">
-            <div class="msg-row agent">
-              <div class="msg-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
-              <div class="msg-bubble">
-                Hello, this is the Vaani Clinical Triage Service. I am an intelligent clinical receptionist. 
-                Please describe what symptoms or medical emergency you are experiencing today.
-              </div>
+          <!-- Live Chat Transcript Stream -->
+          <div class="chat-transcript-area" id="dialogueStream">
+            <div class="message-bubble-row agent">
+              <div class="bubble-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
+              <div class="bubble-text">Hello, this is the Vaani Clinical Triage Service. I am an intelligent clinical receptionist. Please describe what symptoms or medical emergency you are experiencing today.</div>
             </div>
           </div>
 
-          <!-- Audio Frequency Visualizer Canvas & VU Meter -->
-          <div style="background: #060911; padding: 6px 16px; border-top: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 12px;">
-            <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">SPECTRAL VAD:</span>
-            <canvas id="audioVisCanvas" style="flex: 1; height: 22px;"></canvas>
-            <span id="vuMeterText" style="font-family: var(--font-mono); font-size: 10px; color: var(--neon-cyan);">-48 dB</span>
+          <!-- Audio Spectral Visualizer & VU Meter -->
+          <div class="spectral-bar">
+            <span style="font-family: var(--font-code); font-size: 10px; color: var(--text-dim);">SPECTRAL VAD:</span>
+            <canvas id="audioVisCanvas"></canvas>
+            <span id="vuMeterText" style="font-family: var(--font-code); font-size: 11px; color: var(--clinical-cyan);">-48 dB</span>
           </div>
 
-          <!-- Chat Input Bar -->
-          <form class="chat-input-bar" id="chatForm">
+          <!-- Input Dock -->
+          <form class="telephony-input-dock" id="chatForm">
             <input 
               type="text" 
-              class="chat-input" 
+              class="triage-input-field" 
               id="patientInput" 
               placeholder="Speak via microphone or type clinical symptoms (e.g. 'Crushing chest pain radiating to left arm 8/10...')" 
               autocomplete="off"
             >
-            <button type="submit" class="btn-send">SEND & TRIAGE</button>
+            <button type="submit" class="btn-triage-send">SEND & EVALUATE</button>
           </form>
         </div>
 
         <!-- Right: Telemetry Sidebar HUD -->
-        <div class="telemetry-sidebar">
+        <div class="telemetry-sidebar-col">
           
           <!-- ESI Triage Score Card -->
-          <div class="hud-panel">
-            <div class="hud-panel-title">
-              <span>TRIAGE CLASSIFICATION</span>
-              <span id="triagePhaseBadge">INTAKE</span>
+          <div class="glass-panel triage-hud-card">
+            <div class="hud-card-title">
+              <span>TRIAGE ACUITY RATING</span>
+              <span id="triagePhaseBadge" style="color: var(--clinical-cyan);">INTAKE</span>
             </div>
-            <div class="esi-badge-container">
-              <div class="esi-badge esi-3" id="esiBadgeDisplay">ESI-3 URGENT</div>
-              <div class="esi-disposition" id="esiDispositionText">
+            <div class="esi-level-box">
+              <div class="esi-tag esi-3" id="esiBadgeDisplay">ESI-3 URGENT</div>
+              <div class="esi-disposition-summary" id="esiDispositionText">
                 Awaiting clinical symptom assessment and OLD CARTS parameters.
               </div>
             </div>
           </div>
 
           <!-- OLD CARTS Parameter Matrix -->
-          <div class="hud-panel">
-            <div class="hud-panel-title">
+          <div class="glass-panel triage-hud-card">
+            <div class="hud-card-title">
               <span>OLD CARTS (HPI INVESTIGATION)</span>
-              <span style="font-size: 10px; color: var(--neon-cyan);">AUTO-EXTRACT</span>
+              <span style="font-size: 10px; color: var(--clinical-emerald);">ACTIVE EXTRACTION</span>
             </div>
-            <div class="oldcarts-grid">
-              <div class="oldcart-card">
-                <div class="oldcart-letter">[O] ONSET</div>
-                <div class="oldcart-val empty" id="oldcartOnset">Pending...</div>
+            <div class="oldcarts-card-grid">
+              <div class="oldcarts-slot">
+                <div class="oldcarts-slot-label">[O] ONSET</div>
+                <div class="oldcarts-slot-value empty" id="oldcartOnset">Pending...</div>
               </div>
-              <div class="oldcart-card">
-                <div class="oldcart-letter">[L] LOCATION</div>
-                <div class="oldcart-val empty" id="oldcartLocation">Pending...</div>
+              <div class="oldcarts-slot">
+                <div class="oldcarts-slot-label">[L] LOCATION</div>
+                <div class="oldcarts-slot-value empty" id="oldcartLocation">Pending...</div>
               </div>
-              <div class="oldcart-card">
-                <div class="oldcart-letter">[D] DURATION</div>
-                <div class="oldcart-val empty" id="oldcartDuration">Pending...</div>
+              <div class="oldcarts-slot">
+                <div class="oldcarts-slot-label">[D] DURATION</div>
+                <div class="oldcarts-slot-value empty" id="oldcartDuration">Pending...</div>
               </div>
-              <div class="oldcart-card">
-                <div class="oldcart-letter">[C] CHARACTER</div>
-                <div class="oldcart-val empty" id="oldcartCharacter">Pending...</div>
+              <div class="oldcarts-slot">
+                <div class="oldcarts-slot-label">[C] CHARACTER</div>
+                <div class="oldcarts-slot-value empty" id="oldcartCharacter">Pending...</div>
               </div>
-              <div class="oldcart-card">
-                <div class="oldcart-letter">[A] AGGRAVATING</div>
-                <div class="oldcart-val empty" id="oldcartAggravating">Pending...</div>
+              <div class="oldcarts-slot">
+                <div class="oldcarts-slot-label">[A] AGGRAVATING</div>
+                <div class="oldcarts-slot-value empty" id="oldcartAggravating">Pending...</div>
               </div>
-              <div class="oldcart-card">
-                <div class="oldcart-letter">[R] RELIEVING</div>
-                <div class="oldcart-val empty" id="oldcartRelieving">Pending...</div>
+              <div class="oldcarts-slot">
+                <div class="oldcarts-slot-label">[R] RELIEVING</div>
+                <div class="oldcarts-slot-value empty" id="oldcartRelieving">Pending...</div>
               </div>
-              <div class="oldcart-card">
-                <div class="oldcart-letter">[R] RADIATION</div>
-                <div class="oldcart-val empty" id="oldcartRadiation">Pending...</div>
+              <div class="oldcarts-slot">
+                <div class="oldcarts-slot-label">[R] RADIATION</div>
+                <div class="oldcarts-slot-value empty" id="oldcartRadiation">Pending...</div>
               </div>
-              <div class="oldcart-card">
-                <div class="oldcart-letter">[S] SEVERITY</div>
-                <div class="oldcart-val empty" id="oldcartSeverity">-- / 10</div>
+              <div class="oldcarts-slot">
+                <div class="oldcarts-slot-label">[S] SEVERITY</div>
+                <div class="oldcarts-slot-value empty" id="oldcartSeverity">-- / 10</div>
               </div>
             </div>
           </div>
 
-          <!-- Differential Diagnoses -->
-          <div class="hud-panel">
-            <div class="hud-panel-title">
-              <span>DIFFERENTIAL DIAGNOSES (ICD-10)</span>
+          <!-- Differential Diagnosis List with Bayesian Probability Fill -->
+          <div class="glass-panel triage-hud-card">
+            <div class="hud-card-title">
+              <span>DIFFERENTIAL PROBABILITY (BAYESIAN LR+)</span>
             </div>
-            <div class="differential-list" id="diffListContainer">
-              <div class="diff-item">
-                <div class="diff-header">
+            <div class="diff-card-list" id="diffListContainer">
+              <div class="diff-card">
+                <div class="diff-card-head">
                   <span>Awaiting symptom report</span>
-                  <span class="diff-icd">Z00.00</span>
+                  <span class="diff-icd-chip">Z00.00</span>
                 </div>
-                <div class="diff-meta">Start dialogue to generate differentials.</div>
+                <div class="diff-meta-desc">Speak or type symptoms to calculate Bayesian differential probabilities.</div>
               </div>
             </div>
           </div>
@@ -271,309 +274,165 @@
       </div>
     </section>
 
-    <!-- WORKSPACE 2: SOAP NOTE STUDIO (With Linked Evidence Grounding) -->
-    <section id="workspace-soap" class="workspace-panel">
-      <div class="soap-studio-container">
+    <!-- SUITE 2: SCANUP PATHOLOGY LAB (Inspired by Sehatlings Muaina) -->
+    <section id="suite-pathology" class="suite-panel">
+      <div class="pathology-suite-grid">
         
-        <div class="soap-preview-card">
-          <div class="soap-toolbar">
-            <span style="font-family: var(--font-mono); font-size: 13px; color: #fff;">
-              ELECTRONIC HEALTH RECORD NOTE (SOAP SYNTHESIS)
-            </span>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn-ctrl" id="auditGroundingBtn">🔍 AUDIT LINKED EVIDENCE</button>
-              <button class="btn-ctrl" id="generateSoapBtn">⚡ RE-SYNTHESIZE SOAP</button>
-              <button class="btn-ctrl" id="copySoapBtn">📋 COPY MARKDOWN</button>
-            </div>
+        <!-- Left: Lab Intake Textarea -->
+        <div class="glass-panel lab-intake-card">
+          <div class="hud-card-title">
+            <span>UNSTRUCTURED PATHOLOGY INGESTION</span>
+            <button class="btn-action" id="pasteSampleLabBtn">PASTE SAMPLE LAB</button>
           </div>
-          <div class="soap-rendered" id="soapRenderedContent">
-            <p style="color: var(--text-dim); font-style: italic;">
-              No SOAP note generated yet. Conduct a triage conversation in Workspace 1 or load a preset case from Workspace 7, then click Re-synthesize SOAP.
-            </p>
-          </div>
-        </div>
-
-        <div class="telemetry-sidebar">
-          <!-- Linked Evidence Audit Panel -->
-          <div class="hud-panel">
-            <div class="hud-panel-title">
-              <span>LINKED EVIDENCE AUDIT (ABRIDGE)</span>
-              <span id="evidenceScoreBadge" class="calc-badge">INTEGRITY 100%</span>
-            </div>
-            <div id="evidenceListContainer" style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;">
-              <p style="color: var(--text-dim); font-style: italic;">Generate SOAP note to audit verbatim transcript grounding.</p>
-            </div>
-          </div>
-
-          <div class="hud-panel">
-            <div class="hud-panel-title">
-              <span>SOAP SECTION MAP</span>
-            </div>
-            <div style="font-size: 13px; color: var(--text-muted); display: flex; flex-direction: column; gap: 10px;">
-              <div><strong style="color: var(--neon-cyan);">[S] SUBJECTIVE:</strong> Patient chief complaint, OLD CARTS narrative, allergies, medications, ROS.</div>
-              <div><strong style="color: var(--neon-green);">[O] OBJECTIVE:</strong> Cardiac telemetry, reported vitals, parsed LOINC lab biomarkers.</div>
-              <div><strong style="color: var(--neon-amber);">[A] ASSESSMENT:</strong> Primary ICD-10 diagnosis, ranked differentials, ESI rating.</div>
-              <div><strong style="color: var(--neon-red);">[P] PLAN:</strong> Disposition, workup orders, acute treatment, strict return precautions.</div>
-            </div>
-          </div>
-
-          <div class="hud-panel">
-            <div class="hud-panel-title">
-              <span>CLINICAL AUTHENTICATION</span>
-            </div>
-            <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.5;">
-              Algorithm: ESI v4 / OLD CARTS<br>
-              EHR Interoperability: HL7 FHIR v4<br>
-              Standard Vocabularies: ICD-10-CM, LOINC, RxNorm<br>
-              Security: Mock HIPAA Enclave Compliant
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- WORKSPACE 3: BIOMARKER LAB (Sehatlings-Muaina Connection) -->
-    <section id="workspace-labs" class="workspace-panel">
-      <div class="lab-studio-container">
-        
-        <div class="lab-input-card">
-          <div class="hud-panel-title">
-            <span>LAB BIOMARKER EXTRACTOR (LOINC)</span>
-            <button class="btn-ctrl" id="pasteSampleLabBtn">SAMPLE LAB</button>
-          </div>
-          <p style="font-size: 12px; color: var(--text-muted);">
-            Paste unstructured hospital lab reports or point-of-care test results. 
-            Extracts Troponin, BNP, D-Dimer, Glucose, HbA1c, Creatinine, eGFR, Potassium, Sodium, Hemoglobin, WBC, ALT/AST.
+          <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.45;">
+            Paste hospital lab reports, blood panels, or point-of-care results. 
+            ScanUp automatically extracts Troponin, BNP, D-Dimer, Fasting Glucose, HbA1c, Creatinine, eGFR, Potassium, Sodium, Hemoglobin, WBC, and LFTs into visual reference meters.
           </p>
           <textarea 
-            class="lab-textarea" 
+            class="lab-intake-textarea" 
             id="labInputText" 
-            placeholder="Example:&#10;Cardiac Troponin I: 1.45 ng/mL&#10;BNP: 420 pg/mL&#10;Serum Creatinine: 2.4 mg/dL&#10;Blood Glucose: 350 mg/dL&#10;Potassium: 5.8 mEq/L"
+            placeholder="Paste clinical report snippet:&#10;Cardiac Troponin I: 1.45 ng/mL&#10;BNP: 420 pg/mL&#10;Serum Creatinine: 2.4 mg/dL&#10;Blood Glucose: 350 mg/dL&#10;Serum Potassium: 5.6 mEq/L"
           ></textarea>
-          <button class="btn-send" id="extractLabBtn" style="padding: 12px 0;">ANALYZE BIOMARKERS & UPDATE TRIAGE</button>
+          <button class="btn-triage-send" id="extractLabBtn" style="padding: 12px 0;">ANALYZE BIOMARKERS & UPDATE TRIAGE</button>
         </div>
 
-        <div class="biomarker-table-container">
-          <div class="hud-panel-title" style="margin-bottom: 16px;">
-            <span>PARSED BIOMARKERS & CLINICAL THRESHOLDS</span>
-            <span id="bioOrganAlertCount" style="color: var(--neon-red); font-size: 12px; font-family: var(--font-mono);">0 Critical Alerts</span>
+        <!-- Right: Visual Pathology Gauges Container -->
+        <div class="glass-panel pathology-gauges-container">
+          <div class="hud-card-title">
+            <span>PHYSIOLOGICAL BIOMARKER METERS & THRESHOLD RANGES</span>
+            <span id="bioOrganAlertCount" style="color: var(--clinical-rose); font-family: var(--font-code); font-size: 12px;">0 Critical Derangements</span>
           </div>
 
-          <table class="biomarker-table">
-            <thead>
-              <tr>
-                <th>BIOMARKER</th>
-                <th>LOINC</th>
-                <th>VALUE</th>
-                <th>REFERENCE</th>
-                <th>STATUS</th>
-                <th>INTERPRETATION</th>
-              </tr>
-            </thead>
-            <tbody id="biomarkerTableBody">
-              <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 24px;">
-                  No biomarkers parsed yet. Paste lab results on the left or load a scenario from Workspace 7.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="biomarker-cards-grid" id="biomarkerGaugesGrid">
+            <!-- Dynamically populated visual biomarker cards -->
+            <div style="grid-column: 1 / -1; text-align: center; color: var(--text-dim); padding: 48px;">
+              No biomarkers parsed yet. Paste lab text on the left or load a scenario from Workspace 5 to view visual pathology gauges.
+            </div>
+          </div>
         </div>
 
       </div>
     </section>
 
-    <!-- WORKSPACE 4: RX SAFETY & CLINICAL DECISION CALCULATORS -->
-    <section id="workspace-safety" class="workspace-panel">
-      <div class="calculators-grid">
+    <!-- SUITE 3: ONE-TAP-GO TRIAGE & RX SAFETY -->
+    <section id="suite-decision" class="suite-panel">
+      <div class="safety-decision-grid">
         
-        <!-- HEART Score Calculator Card -->
-        <div class="calc-card">
-          <div class="calc-header">
-            <span class="calc-title">❤️ HEART SCORE (CHEST PAIN / MACE RISK)</span>
-            <span class="calc-badge" id="heartScoreBadge">Score: 0 / 10</span>
+        <!-- HEART Score Calculator -->
+        <div class="glass-panel calculator-panel">
+          <div class="calculator-header">
+            <span class="calc-name">❤️ HEART SCORE (CHEST PAIN / MACE RISK)</span>
+            <span class="calc-tag-pill" id="heartScoreBadge" style="background: rgba(0, 229, 255, 0.1); color: var(--clinical-cyan);">Score: 0 / 10</span>
           </div>
-          <div class="calc-row">
-            <span class="calc-row-label">History Suspicion</span>
-            <select class="calc-select" id="heartHistory">
+          <div class="calc-field-group">
+            <span class="calc-field-label">History Suspicion</span>
+            <select class="calc-form-control" id="heartHistory">
               <option value="0">0 — Slightly suspicious</option>
               <option value="1">1 — Moderately suspicious</option>
-              <option value="2" selected>2 — Highly suspicious (Classic pressure, arm radiation)</option>
+              <option value="2" selected>2 — Highly suspicious (Classic retrosternal pressure, arm radiation)</option>
             </select>
           </div>
-          <div class="calc-row">
-            <span class="calc-row-label">ECG Finding</span>
-            <select class="calc-select" id="heartECG">
+          <div class="calc-field-group">
+            <span class="calc-field-label">ECG Finding</span>
+            <select class="calc-form-control" id="heartECG">
               <option value="0">0 — Normal</option>
-              <option value="1">1 — Non-specific repolarization abnormality</option>
+              <option value="1">1 — Non-specific repolarization disturbance</option>
               <option value="2" selected>2 — Significant ST deviation / depression</option>
             </select>
           </div>
-          <div class="calc-row">
-            <span class="calc-row-label">Age</span>
-            <input type="number" class="calc-input" id="heartAge" value="62" min="18" max="110">
+          <div class="calc-field-group">
+            <span class="calc-field-label">Age</span>
+            <input type="number" class="calc-form-control" id="heartAge" value="62" min="18" max="110">
           </div>
-          <div class="calc-row">
-            <span class="calc-row-label">Risk Factors (HTN, Lipids, Smoking, DM, CAD)</span>
-            <select class="calc-select" id="heartRisk">
+          <div class="calc-field-group">
+            <span class="calc-field-label">Risk Factors (HTN, Lipids, Smoking, DM, CAD)</span>
+            <select class="calc-form-control" id="heartRisk">
               <option value="0">0 — No risk factors</option>
               <option value="1">1 — 1 or 2 risk factors</option>
-              <option value="2" selected>2 — 3+ risk factors or known atherosclerotic disease</option>
+              <option value="2" selected>2 — 3+ risk factors or known vascular disease</option>
             </select>
           </div>
-          <div class="calc-row">
-            <span class="calc-row-label">Initial Troponin</span>
-            <select class="calc-select" id="heartTrop">
-              <option value="0">0 — Normal limits (&le; 0.04 ng/mL)</option>
+          <div class="calc-field-group">
+            <span class="calc-field-label">Initial Troponin</span>
+            <select class="calc-form-control" id="heartTrop">
+              <option value="0">0 — Normal limit (&le; 0.04 ng/mL)</option>
               <option value="1">1 — 1 to 3x normal limit</option>
               <option value="2" selected>2 — &gt; 3x normal limit (&ge; 0.12 ng/mL)</option>
             </select>
           </div>
-          <button class="btn-ctrl" id="calcHeartBtn" style="justify-content: center; color: var(--neon-cyan);">CALCULATE HEART SCORE</button>
-          <div class="calc-result-box" id="heartResultBox">
-            <div class="calc-score-display">
+          <button class="btn-action" id="calcHeartBtn" style="justify-content: center; color: var(--clinical-cyan);">RE-EVALUATE HEART SCORE</button>
+          <div class="calc-result-summary" id="heartResultBox">
+            <div class="calc-score-row">
               <span>Risk Stratification</span>
-              <span class="calc-risk-tag risk-high" id="heartRiskTag">HIGH RISK (Score: 9)</span>
+              <span class="calc-tag-pill risk-high" id="heartRiskTag" style="background: rgba(244, 63, 94, 0.2); color: var(--clinical-rose);">HIGH RISK (Score: 9)</span>
             </div>
-            <div class="calc-explanation" id="heartExpText">50% - 65% risk of Major Adverse Cardiac Events within 6 weeks. Immediate admission and cardiology consultation indicated.</div>
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.45;" id="heartExpText">
+              50% - 65% risk of Major Adverse Cardiac Events within 6 weeks. Immediate admission and cardiology consultation indicated.
+            </div>
           </div>
         </div>
 
         <!-- Wells' Criteria for Pulmonary Embolism -->
-        <div class="calc-card">
-          <div class="calc-header">
-            <span class="calc-title">🫁 WELLS' CRITERIA (PULMONARY EMBOLISM)</span>
-            <span class="calc-badge" id="wellsScoreBadge">Score: 0.0</span>
+        <div class="glass-panel calculator-panel">
+          <div class="calculator-header">
+            <span class="calc-name">🫁 WELLS' CRITERIA (PULMONARY EMBOLISM)</span>
+            <span class="calc-tag-pill" id="wellsScoreBadge" style="background: rgba(0, 229, 255, 0.1); color: var(--clinical-cyan);">Score: 0.0</span>
           </div>
-          <div class="calc-checkbox-group">
-            <label class="calc-checkbox-label">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
               <input type="checkbox" id="wellsDVT"> Clinical signs/symptoms of DVT (+3.0)
             </label>
-            <label class="calc-checkbox-label">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
               <input type="checkbox" id="wellsPEAlt"> PE is #1 diagnosis or equally likely (+3.0)
             </label>
-            <label class="calc-checkbox-label">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
               <input type="checkbox" id="wellsHR"> Heart rate &gt; 100 beats/min (+1.5)
             </label>
-            <label class="calc-checkbox-label">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
               <input type="checkbox" id="wellsImmob"> Immobilization &ge;3 days or surgery in 4 weeks (+1.5)
             </label>
-            <label class="calc-checkbox-label">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
               <input type="checkbox" id="wellsPrior"> Previous DVT or PE (+1.5)
             </label>
-            <label class="calc-checkbox-label">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
               <input type="checkbox" id="wellsHemo"> Hemoptysis (coughing blood) (+1.0)
             </label>
-            <label class="calc-checkbox-label">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
               <input type="checkbox" id="wellsMalign"> Active malignancy / cancer (+1.0)
             </label>
           </div>
-          <button class="btn-ctrl" id="calcWellsBtn" style="justify-content: center; color: var(--neon-cyan);">CALCULATE WELLS PE SCORE</button>
-          <div class="calc-result-box" id="wellsResultBox">
-            <div class="calc-score-display">
+          <button class="btn-action" id="calcWellsBtn" style="justify-content: center; color: var(--clinical-cyan);">CALCULATE WELLS PE SCORE</button>
+          <div class="calc-result-summary" id="wellsResultBox">
+            <div class="calc-score-row">
               <span>PE Probability</span>
-              <span class="calc-risk-tag risk-low" id="wellsRiskTag">PE Unlikely</span>
+              <span class="calc-tag-pill" id="wellsRiskTag" style="background: rgba(16, 185, 129, 0.2); color: var(--clinical-emerald);">PE Unlikely</span>
             </div>
-            <div class="calc-explanation" id="wellsExpText">Order high-sensitivity D-Dimer assay. If negative, PE safely ruled out.</div>
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.45;" id="wellsExpText">
+              Order high-sensitivity D-Dimer assay. If negative, PE safely ruled out without radiation exposure.
+            </div>
           </div>
         </div>
 
-        <!-- qSOFA & GCS Combined Card -->
-        <div class="calc-card">
-          <div class="calc-header">
-            <span class="calc-title">⚡ qSOFA (SEPSIS ORGAN FAILURE)</span>
-            <span class="calc-badge" id="qsofaBadge">Score: 0 / 3</span>
+        <!-- Full-Width RxNorm Drug-Allergy Safety Shield -->
+        <div class="glass-panel rx-safety-full-panel">
+          <div class="calculator-header">
+            <span class="calc-name">🛡️ RXNORM DRUG-ALLERGY & CROSS-REACTIVITY SHIELD</span>
+            <button class="btn-action" id="runRxCheckBtn">⚡ TEST DRUG SAFETY</button>
           </div>
-          <div class="calc-row">
-            <span class="calc-row-label">Respiratory Rate (breaths/min)</span>
-            <input type="number" class="calc-input" id="qsofaRR" value="22" min="8" max="60">
-          </div>
-          <div class="calc-row">
-            <span class="calc-row-label">Systolic Blood Pressure (mmHg)</span>
-            <input type="number" class="calc-input" id="qsofaSBP" value="95" min="40" max="260">
-          </div>
-          <div class="calc-row">
-            <label class="calc-checkbox-label" style="margin-top: 4px;">
-              <input type="checkbox" id="qsofaGCS" checked> Altered Mentation (GCS &lt; 15 or acute confusion)
-            </label>
-          </div>
-          <button class="btn-ctrl" id="calcQsofaBtn" style="justify-content: center; color: var(--neon-cyan);">CALCULATE qSOFA</button>
-          <div class="calc-result-box" id="qsofaResultBox">
-            <div class="calc-score-display">
-              <span>Sepsis Acuity</span>
-              <span class="calc-risk-tag risk-high" id="qsofaRiskTag">HIGH RISK (Score: 3)</span>
-            </div>
-            <div class="calc-explanation" id="qsofaExpText">&gt;10% in-hospital mortality. Immediate blood cultures x2, broad-spectrum antibiotics, IV fluid resuscitation.</div>
-          </div>
-        </div>
-
-        <!-- GCS Coma Scale Card -->
-        <div class="calc-card">
-          <div class="calc-header">
-            <span class="calc-title">🧠 GLASGOW COMA SCALE (GCS)</span>
-            <span class="calc-badge" id="gcsBadge">Score: 15 / 15</span>
-          </div>
-          <div class="calc-row">
-            <span class="calc-row-label">Eye Opening (1-4)</span>
-            <select class="calc-select" id="gcsEye">
-              <option value="4" selected>4 — Spontaneous</option>
-              <option value="3">3 — To speech</option>
-              <option value="2">2 — To pain</option>
-              <option value="1">1 — None</option>
-            </select>
-          </div>
-          <div class="calc-row">
-            <span class="calc-row-label">Verbal Response (1-5)</span>
-            <select class="calc-select" id="gcsVerbal">
-              <option value="5" selected>5 — Oriented</option>
-              <option value="4">4 — Confused</option>
-              <option value="3">3 — Inappropriate words</option>
-              <option value="2">2 — Incomprehensible sounds</option>
-              <option value="1">1 — None</option>
-            </select>
-          </div>
-          <div class="calc-row">
-            <span class="calc-row-label">Motor Response (1-6)</span>
-            <select class="calc-select" id="gcsMotor">
-              <option value="6" selected>6 — Obeys commands</option>
-              <option value="5">5 — Localizes pain</option>
-              <option value="4">4 — Flexion withdrawal</option>
-              <option value="3">3 — Decorticate flexion</option>
-              <option value="2">2 — Decerebrate extension</option>
-              <option value="1">1 — None</option>
-            </select>
-          </div>
-          <button class="btn-ctrl" id="calcGcsBtn" style="justify-content: center; color: var(--neon-cyan);">CALCULATE GCS</button>
-          <div class="calc-result-box" id="gcsResultBox">
-            <div class="calc-score-display">
-              <span>Neurological Rating</span>
-              <span class="calc-risk-tag risk-low" id="gcsRiskTag">Mild / Preserved (15/15)</span>
-            </div>
-            <div class="calc-explanation" id="gcsExpText">Normal consciousness. Intact airway protective reflexes.</div>
-          </div>
-        </div>
-
-        <!-- Full-Width Rx Safety & Drug Allergy Interaction Checker -->
-        <div class="rx-safety-container">
-          <div class="calc-header">
-            <span class="calc-title">🛡️ RX SAFETY & ALLERGY-DRUG CROSS-REACTIVITY GUARDRAIL</span>
-            <button class="btn-ctrl" id="runRxCheckBtn">⚡ TEST DRUG SAFETY</button>
-          </div>
-          <p style="font-size: 12px; color: var(--text-muted);">
-            Cross-checks planned triage pharmacotherapy against patient allergies (Penicillins, Cephalosporins, Sulfas, Aspirin/NSAIDs, Opioids) and active medications to prevent fatal anaphylaxis or hemorrhage.
+          <p style="font-size: 12px; color: var(--text-secondary);">
+            Automated safety check evaluating planned triage pharmacotherapy against patient allergies (Penicillins, Cephalosporins, Sulfas, Aspirin/NSAIDs, Opioids) and active medications.
           </p>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
             <div>
-              <span class="calc-row-label">Patient Allergies (Comma separated)</span>
-              <input type="text" class="calc-input" id="rxAllergiesInput" value="Penicillin (Anaphylaxis), Aspirin" style="width: 100%;">
+              <span class="calc-field-label">Documented Patient Allergies</span>
+              <input type="text" class="calc-form-control" id="rxAllergiesInput" value="Penicillin (Anaphylaxis), Aspirin" style="width: 100%;">
             </div>
             <div>
-              <span class="calc-row-label">Proposed Medications to Administer (Comma separated)</span>
-              <input type="text" class="calc-input" id="rxProposedInput" value="Chewable Aspirin 325mg, Cephalexin 500mg, Amoxicillin 875mg" style="width: 100%;">
+              <span class="calc-field-label">Proposed Medications to Administer</span>
+              <input type="text" class="calc-form-control" id="rxProposedInput" value="Chewable Aspirin 325mg, Cephalexin 500mg, Amoxicillin 875mg" style="width: 100%;">
             </div>
           </div>
-          <div id="rxAlertsList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+          <div id="rxAlertsList" style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
             <!-- Rx alerts injected here -->
           </div>
         </div>
@@ -581,82 +440,69 @@
       </div>
     </section>
 
-    <!-- WORKSPACE 5: PATIENT AFTER-VISIT SUMMARY & PRINTABLE CHART -->
-    <section id="workspace-avs" class="workspace-panel">
-      <div class="avs-container">
+    <!-- SUITE 4: EHR AMBIENT SCRIBE & FHIR -->
+    <section id="suite-scribe" class="suite-panel">
+      <div class="ehr-scribe-grid">
         
-        <div class="avs-card">
-          <div class="soap-toolbar">
-            <span style="font-family: var(--font-mono); font-size: 13px; color: #fff;">
-              PATIENT AFTER-VISIT SUMMARY (AVS) — 6TH GRADE COMPASSIONATE LANGUAGE
+        <!-- Left: SOAP Note View -->
+        <div class="glass-panel soap-note-container">
+          <div class="soap-toolbar-bar">
+            <span style="font-size: 14px; font-weight: 700; color: #fff;">
+              ELECTRONIC HEALTH RECORD NOTE (SOAP DOCUMENTATION)
             </span>
             <div style="display: flex; gap: 8px;">
-              <button class="btn-ctrl" id="generateAvsBtn">⚡ RE-GENERATE AVS</button>
-              <button class="btn-ctrl" id="openPrintChartBtn">🖨️ HOSPITAL PRINT/PDF CHART</button>
+              <button class="btn-action" id="generateSoapBtn">⚡ RE-SYNTHESIZE SOAP</button>
+              <button class="btn-action" id="generateAvsBtn">📄 PATIENT AVS</button>
+              <button class="btn-action" id="openPrintChartBtn">🖨️ PRINT HOSPITAL CHART</button>
+              <button class="btn-action" id="copySoapBtn">📋 COPY</button>
             </div>
           </div>
-          <div class="avs-content" id="avsRenderedContent">
+          <div class="soap-rendered-markdown" id="soapRenderedContent">
             <p style="color: var(--text-dim); font-style: italic;">
-              Conduct a triage encounter in Workspace 1 or load a scenario from Workspace 7, then click "Re-generate AVS".
+              No SOAP note generated yet. Conduct a triage conversation in Workspace 1 or load a preset case from Workspace 5, then click Re-synthesize SOAP.
             </p>
           </div>
         </div>
 
-        <div class="telemetry-sidebar">
-          <div class="hud-panel">
-            <div class="hud-panel-title">
-              <span>AVS SUMMARY MATRIX</span>
+        <!-- Right: Linked Evidence Grounding Drawer (Abridge Architecture) -->
+        <div class="evidence-audit-col">
+          <div class="glass-panel triage-hud-card">
+            <div class="hud-card-title">
+              <span>LINKED EVIDENCE AUDIT (ABRIDGE)</span>
+              <span id="evidenceScoreBadge" class="calc-tag-pill" style="background: rgba(16, 185, 129, 0.2); color: var(--clinical-emerald);">INTEGRITY 100%</span>
             </div>
-            <div style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px; line-height: 1.4;">
-              <div><strong style="color: var(--neon-cyan);">Plain Diagnosis:</strong> Translated from ICD-10 medical terminology into plain patient language.</div>
-              <div><strong style="color: var(--neon-red);">Danger Signs:</strong> Clear bullet points of when to call 911 immediately.</div>
-              <div><strong style="color: var(--neon-green);">Medication Instructions:</strong> Safe guidance avoiding home medication delay.</div>
-              <div><strong style="color: var(--neon-amber);">Verification Code:</strong> Secure triage encounter token for ER intake desk.</div>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+              Verifies that every assessment and plan order maps directly to verbatim quotes in the voice transcript.
+            </p>
+            <div id="evidenceListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto;">
+              <p style="color: var(--text-dim); font-style: italic; font-size: 12px;">Generate SOAP note to audit verbatim transcript grounding.</p>
             </div>
           </div>
 
-          <div class="hud-panel">
-            <div class="hud-panel-title">
-              <span>HEALTH LITERACY STANDARD</span>
+          <!-- FHIR v4 Bundle Box -->
+          <div class="glass-panel triage-hud-card">
+            <div class="hud-card-title">
+              <span>HL7 FHIR RELEASE 4 EXPORT</span>
+              <button class="btn-action" id="downloadFhirBtn" style="font-size: 10px; padding: 2px 6px;">💾 DOWNLOAD JSON</button>
             </div>
-            <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.5;">
-              Reading Level: Grade 6.2 (Flesch-Kincaid)<br>
-              AHA / ACC Emergency Guideline Compliant<br>
-              Multi-Language Translation: English / Hindi (वाणी)
-            </div>
+            <pre id="fhirCodeView" style="font-family: var(--font-code); font-size: 11px; color: #7dd3fc; background: #060914; padding: 12px; border-radius: 6px; max-height: 200px; overflow-y: auto;">// FHIR v4 transaction bundle ready</pre>
           </div>
         </div>
 
       </div>
     </section>
 
-    <!-- WORKSPACE 6: FHIR EXPLORER -->
-    <section id="workspace-fhir" class="workspace-panel">
-      <div class="fhir-container">
-        <div class="soap-toolbar">
-          <span style="font-family: var(--font-mono); font-size: 13px; color: #fff;">
-            HL7 FHIR RELEASE 4 TRANSACTION BUNDLE
-          </span>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn-ctrl" id="generateFhirBtn">⚡ COMPILE FHIR v4 BUNDLE</button>
-            <button class="btn-ctrl" id="downloadFhirBtn">💾 DOWNLOAD JSON</button>
-          </div>
-        </div>
-        <pre class="fhir-code-view" id="fhirCodeView">// Click "Compile FHIR v4 Bundle" or execute a triage dialogue to generate transaction resources.</pre>
-      </div>
-    </section>
-
-    <!-- WORKSPACE 7: CLINICAL SIMULATOR -->
-    <section id="workspace-simulator" class="workspace-panel">
-      <div style="margin-bottom: 20px;">
-        <h2 style="font-size: 18px; color: #fff; margin-bottom: 6px;">Preset Clinical Telephony Scenarios</h2>
-        <p style="font-size: 13px; color: var(--text-muted);">
+    <!-- SUITE 5: PRESET CLINICAL SIMULATOR -->
+    <section id="suite-simulator" class="suite-panel">
+      <div style="margin-bottom: 24px;">
+        <h2 style="font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px;">Preset Clinical Telephony Scenarios</h2>
+        <p style="font-size: 13px; color: var(--text-secondary);">
           Select an emergency, urgent, or outpatient medical case to simulate patient phone intake, 
-          real-time telemetry, red-flag triggers, and automated SOAP / FHIR synthesis.
+          real-time ICU telemetry, red-flag triggers, and automated SOAP / FHIR synthesis.
         </p>
       </div>
-      <div class="scenarios-grid" id="scenariosGrid">
-        <!-- Injected via JavaScript -->
+      <div class="scenarios-card-grid" id="scenariosGrid">
+        <!-- Dynamically injected via JavaScript -->
       </div>
     </section>
 
@@ -665,17 +511,17 @@
   <!-- ========================================================================
        MODAL: HOSPITAL PRINTABLE ENCOUNTER CHART (EPIC/CERNER STYLE)
        ======================================================================== -->
-  <div class="modal-overlay" id="chartModalOverlay">
-    <div class="modal-box">
-      <div class="modal-header">
+  <div class="clinical-modal-backdrop" id="chartModalOverlay">
+    <div class="clinical-modal-window">
+      <div class="modal-window-header">
         <span>HOSPITAL ENCOUNTER RECORD & CLINICAL TRIAGE CHART</span>
-        <button class="btn-ctrl" id="closeModalBtn" style="color: var(--neon-red);">✕ CLOSE</button>
+        <button class="btn-action" id="closeModalBtn" style="color: var(--clinical-rose); border-color: rgba(244, 63, 94, 0.4);">✕ CLOSE</button>
       </div>
-      <div class="modal-body" id="printableChartBody">
+      <div class="modal-window-body" id="printableChartBody">
         <!-- Rendered hospital document -->
       </div>
-      <div class="modal-footer">
-        <button class="btn-ctrl" id="printModalBtn" style="color: #fff; background: var(--border-subtle);">🖨️ PRINT RECORD</button>
+      <div class="modal-window-footer">
+        <button class="btn-action" id="printModalBtn" style="background: #0f172a; color: #fff;">🖨️ PRINT ENCOUNTER RECORD</button>
       </div>
     </div>
   </div>
@@ -683,29 +529,29 @@
   <!-- ========================================================================
        MODAL: TELEPHONY DTMF DIAL PAD
        ======================================================================== -->
-  <div class="modal-overlay" id="dtmfModalOverlay">
-    <div class="modal-box" style="width: 280px;">
-      <div class="modal-header">
+  <div class="clinical-modal-backdrop" id="dtmfModalOverlay">
+    <div class="clinical-modal-window" style="width: 280px; background: #0b1120; color: #fff;">
+      <div class="modal-window-header" style="background: #060913;">
         <span>TELEPHONY DIAL PAD</span>
-        <button class="btn-ctrl" id="closeDtmfBtn" style="color: var(--neon-red);">✕</button>
+        <button class="btn-action" id="closeDtmfBtn" style="color: var(--clinical-rose);">✕</button>
       </div>
-      <div style="padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px;">
-        <div id="dtmfNumberDisplay" style="font-family: var(--font-mono); font-size: 20px; color: var(--neon-cyan); letter-spacing: 3px; min-height: 28px;">
+      <div style="padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+        <div id="dtmfNumberDisplay" style="font-family: var(--font-code); font-size: 22px; color: var(--clinical-cyan); letter-spacing: 4px; min-height: 28px;">
           911
         </div>
-        <div class="dtmf-pad">
-          <button class="dtmf-btn" data-key="1">1</button>
-          <button class="dtmf-btn" data-key="2">2</button>
-          <button class="dtmf-btn" data-key="3">3</button>
-          <button class="dtmf-btn" data-key="4">4</button>
-          <button class="dtmf-btn" data-key="5">5</button>
-          <button class="dtmf-btn" data-key="6">6</button>
-          <button class="dtmf-btn" data-key="7">7</button>
-          <button class="dtmf-btn" data-key="8">8</button>
-          <button class="dtmf-btn" data-key="9">9</button>
-          <button class="dtmf-btn" data-key="*">*</button>
-          <button class="dtmf-btn" data-key="0">0</button>
-          <button class="dtmf-btn" data-key="#">#</button>
+        <div class="dtmf-key-grid">
+          <button class="dtmf-key" data-key="1">1</button>
+          <button class="dtmf-key" data-key="2">2</button>
+          <button class="dtmf-key" data-key="3">3</button>
+          <button class="dtmf-key" data-key="4">4</button>
+          <button class="dtmf-key" data-key="5">5</button>
+          <button class="dtmf-key" data-key="6">6</button>
+          <button class="dtmf-key" data-key="7">7</button>
+          <button class="dtmf-key" data-key="8">8</button>
+          <button class="dtmf-key" data-key="9">9</button>
+          <button class="dtmf-key" data-key="*">*</button>
+          <button class="dtmf-key" data-key="0">0</button>
+          <button class="dtmf-key" data-key="#">#</button>
         </div>
       </div>
     </div>
