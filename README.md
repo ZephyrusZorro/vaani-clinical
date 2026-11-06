@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![HL7 FHIR v4](https://img.shields.io/badge/HL7_FHIR-Release_4-orange.svg)](https://hl7.org/fhir/R4/)
-[![Tests Passing](https://img.shields.io/badge/pytest-20%2F20%20passed-brightgreen.svg)]()
+[![Tests Passing](https://img.shields.io/badge/pytest-39%2F39%20passed-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Vaani (वाणी)** — Sanskrit/Hindi for *Voice*, *Speech*, or *The Spoken Word*.  
@@ -30,24 +30,27 @@ flowchart TD
         F -->|Troponin, BNP, D-Dimer, Glucose, Creatinine| G
     end
 
-    subgraph Triage Classification & Decision Support
+    subgraph Clinical Decision Support & Safety
         G --> H{Emergency Severity Index}
         H -->|ESI-1 / ESI-2| I[Emergency Resuscitation / Code Red 911]
         H -->|ESI-3| J[Urgent Care Center < 24h]
         H -->|ESI-4 / ESI-5| K[Primary Care Telehealth / Routine]
+        
+        G --> L[Decision Calculators: HEART, Wells PE, qSOFA, GCS]
+        G --> M[Rx Safety & Allergy Cross-Reactivity Guardrail]
     end
 
     subgraph EHR Documentation & Interoperability
-        G --> L[Hospital SOAP Note Synthesizer]
-        L --> M[ICD-10-CM Coding & Differential List]
-        G --> N[HL7 FHIR Release 4 Transaction Bundle]
-        N --> O[Patient, Encounter, Condition, Observation, DocRef]
+        G --> N[Hospital SOAP Note Synthesizer]
+        N --> O[Linked Evidence Audit - Abridge Model]
+        G --> P[Patient After-Visit Summary & Hospital Print Chart]
+        G --> Q[HL7 FHIR Release 4 Transaction Bundle]
     end
 ```
 
 ---
 
-## 🌟 Key Innovations
+## 🌟 Master-Grade Capabilities
 
 1. **Conversational State Machine & OLD CARTS HPI Investigation**
    - Automatically guides incoming telephony calls through 5 clinical phases: `INTAKE` $\rightarrow$ `HPI_INVESTIGATION` $\rightarrow$ `MEDS_ALLERGIES` $\rightarrow$ `ASSESSMENT` $\rightarrow$ `DISPOSITION`.
@@ -55,7 +58,7 @@ flowchart TD
 
 2. **Emergency Red-Flag Ruleout Protocol & ESI Scoring**
    - Implements Emergency Severity Index (ESI Levels 1 to 5) algorithm.
-   - Detects life-threatening emergencies with zero latency:
+   - Immediate detection of life-threatening presentations:
      - **Acute Coronary Syndrome (STEMI / NSTEMI)**: Crushing substernal chest pressure, left arm / jaw radiation, diaphoresis $\rightarrow$ `ESI-1`.
      - **Acute Stroke (FAST Protocol)**: Facial droop, unilateral arm weakness, slurred speech $\rightarrow$ `ESI-1`.
      - **Anaphylaxis**: Acute airway edema, bronchospasm, urticaria $\rightarrow$ `ESI-1`.
@@ -72,17 +75,29 @@ flowchart TD
      - **Hepatic**: ALT (`LOINC 1742-6`), AST (`LOINC 1920-8`).
    - Automatically computes quantitative bounds: `NORMAL`, `ELEVATED`, `CRITICALLY_HIGH`, `LOW`, and `CRITICALLY_LOW`.
 
-4. **Electronic Health Record SOAP Note Synthesizer**
-   - Synthesizes authenticated medical **SOAP Notes** (Subjective, Objective, Assessment, Plan) with ICD-10 diagnostic codes, reported vitals, telemetry interpretation, and strict return precautions.
+4. **Clinical Decision Risk Calculators**
+   - **HEART Score**: Stratifies 6-week Major Adverse Cardiac Events (MACE) risk in chest pain.
+   - **Wells' Criteria for PE**: Determines two-tier (PE Likely vs Unlikely) and three-tier pulmonary embolism probability and D-dimer threshold.
+   - **qSOFA Score**: Quick Sepsis-related Organ Failure Assessment detecting in-hospital mortality risk.
+   - **Glasgow Coma Scale (GCS)**: Neurological conscious level rating (Eye, Verbal, Motor) with airway compromise alert.
 
-5. **HL7 FHIR Release 4 Interoperability**
-   - Compiles valid FHIR v4 transaction bundles ready for Epic, Cerner, or Meditech integration.
-   - Generates compliant `Patient`, `Encounter`, `Condition`, `Observation`, and `DocumentReference` resources.
+5. **Rx Safety & Allergy Cross-Reactivity Guardrail**
+   - Cross-checks planned triage pharmacotherapy against patient allergies (Penicillins, Cephalosporins, Sulfas, Aspirin/NSAIDs, Opioids) and active medications.
+   - Prevents fatal anaphylaxis, bronchospasm (Samter's Triad), and drug-drug bleeding interactions with safe alternative recommendations (e.g., Clopidogrel substitute for Aspirin allergy in STEMI).
 
-6. **Retro-Cyber Hospital Telemetry Studio**
-   - Real-time Lead II cardiac waveform canvas running mathematical `P-Q-R-S-T` pulse simulation.
-   - Window manager top bar (`.dbar`) with dot-matrix Doto clock and live telemetry status.
-   - Built-in Web Speech API text-to-speech (TTS) and voice simulator.
+6. **Linked Evidence & Grounding Audit (Abridge Architecture)**
+   - Maps synthesized clinical claims directly back to verbatim quotes from the patient transcript.
+   - Calculates grounding confidence scores and hallucination risk indices to ensure medico-legal auditability.
+
+7. **Patient After-Visit Summary (AVS) & Hospital Printable Chart**
+   - Translates complex medical diagnoses into compassionate, 6th-grade reading level patient-facing discharge instructions.
+   - Includes full-screen Hospital Encounter Chart modal (Epic / Cerner formatted) ready for instant printing or PDF export.
+
+8. **Retro-Cyber Telemetry & Arrhythmia Studio**
+   - Lead II cardiac monitor with live arrhythmia selector: Normal Sinus Rhythm, Sinus Tachycardia, STEMI Elevation, Atrial Fibrillation, and Ventricular Fibrillation Arrest.
+   - Real-time HR slider adjusting mathematical canvas rendering speed.
+   - Dual-Tone Multi-Frequency (DTMF) dial pad synthesizer emitting genuine telephony audio tones.
+   - Real browser microphone stream capture via Web Audio API with live decibel VU meter and spectral VAD.
 
 ---
 
@@ -95,13 +110,17 @@ vaani-clinical/
 │   ├── models.py               # Pydantic v2 schemas (OLD CARTS, SOAP, FHIR v4)
 │   ├── clinical_triage.py      # Conversational triage engine & red flag ruleout
 │   ├── biomarker_extractor.py  # LOINC lab extraction & reference range analysis
+│   ├── clinical_calculators.py # HEART, Wells PE, qSOFA, GCS calculators
+│   ├── rx_safety.py            # Drug-allergy interaction & cross-reactivity guardrail
+│   ├── evidence_grounding.py   # Linked evidence transcript mapping (Abridge model)
+│   ├── avs_generator.py        # Patient After-Visit Summary generator
 │   ├── soap_synthesizer.py     # Medical SOAP documentation generator
 │   ├── fhir_generator.py       # HL7 FHIR v4 JSON transaction bundle builder
 │   ├── scenarios.py            # 5 preset clinical simulation scenarios
 │   ├── db.py                   # SQLite persistence layer
 │   └── main.py                 # FastAPI application & REST endpoints
 ├── frontend/
-│   ├── index.html              # Hospital telemetry workstation interface
+│   ├── index.html              # 7-Workspace hospital telemetry workstation
 │   ├── css/
 │   │   └── vaani.css           # Retro-cyber styling, CRT overlay, glowing HUD
 │   ├── fonts/
@@ -109,10 +128,14 @@ vaani-clinical/
 │   │   ├── SpaceMono-400.woff2
 │   │   └── Doto-Variable.woff2
 │   └── js/
-│       └── app.js              # ECG canvas, audio visualizer, TTS, state manager
+│       └── app.js              # ECG canvas, arrhythmia math, DTMF synthesizer, TTS/STT
 ├── tests/
+│   ├── __init__.py
 │   ├── test_triage.py          # OLD CARTS & red flag unit tests
 │   ├── test_biomarkers.py      # Biomarker extraction & clinical status tests
+│   ├── test_calculators.py     # HEART, Wells, qSOFA, GCS unit tests
+│   ├── test_rx_safety.py       # Drug-allergy & cross-reactivity safety tests
+│   ├── test_avs_grounding.py   # AVS & Linked Evidence grounding tests
 │   ├── test_soap_fhir.py       # SOAP and FHIR bundle integration tests
 │   └── test_api.py             # FastAPI REST endpoint integration tests
 ├── .gitignore
@@ -154,7 +177,7 @@ Navigate to **`http://127.0.0.1:8001`** in your browser.
 
 ---
 
-## 🧪 Running Automated Tests
+## 🧪 Automated Test Suite (39 / 39 Passing)
 
 Run the full pytest suite:
 ```bash
@@ -170,10 +193,29 @@ tests/test_api.py::test_biomarker_extraction_endpoint PASSED
 tests/test_api.py::test_soap_generation_endpoint PASSED
 tests/test_api.py::test_fhir_generation_endpoint PASSED
 tests/test_api.py::test_list_encounters_endpoint PASSED
+tests/test_api.py::test_heart_calculator_endpoint PASSED
+tests/test_api.py::test_wells_pe_endpoint PASSED
+tests/test_api.py::test_qsofa_endpoint PASSED
+tests/test_api.py::test_gcs_endpoint PASSED
+tests/test_api.py::test_rx_safety_endpoint PASSED
+tests/test_api.py::test_avs_endpoint PASSED
+tests/test_avs_grounding.py::test_avs_generation PASSED
+tests/test_avs_grounding.py::test_evidence_grounding PASSED
 tests/test_biomarkers.py::test_cardiac_biomarker_extraction PASSED
 tests/test_biomarkers.py::test_metabolic_biomarker_extraction PASSED
 tests/test_biomarkers.py::test_renal_biomarker_extraction PASSED
 tests/test_biomarkers.py::test_normal_hematology PASSED
+tests/test_calculators.py::test_heart_score_high_risk PASSED
+tests/test_calculators.py::test_heart_score_low_risk PASSED
+tests/test_calculators.py::test_wells_pe_likely PASSED
+tests/test_calculators.py::test_wells_pe_unlikely PASSED
+tests/test_calculators.py::test_qsofa_septic_alert PASSED
+tests/test_calculators.py::test_gcs_coma_score PASSED
+tests/test_rx_safety.py::test_penicillin_allergy_contraindication PASSED
+tests/test_rx_safety.py::test_penicillin_cephalosporin_cross_reactivity PASSED
+tests/test_rx_safety.py::test_aspirin_allergy_in_stemi PASSED
+tests/test_rx_safety.py::test_anticoagulant_antiplatelet_bleeding_interaction PASSED
+tests/test_rx_safety.py::test_safe_pharmacotherapy PASSED
 tests/test_soap_fhir.py::test_soap_synthesis PASSED
 tests/test_soap_fhir.py::test_fhir_bundle_generation PASSED
 tests/test_triage.py::test_oldcarts_extraction PASSED
@@ -183,10 +225,10 @@ tests/test_triage.py::test_anaphylaxis_red_flag_detection PASSED
 tests/test_triage.py::test_dka_red_flag_detection PASSED
 tests/test_triage.py::test_routine_presentation_scoring PASSED
 tests/test_triage.py::test_process_triage_turn PASSED
-============================== 20 passed in 0.48s ==============================
+============================== 39 passed in 0.51s ==============================
 ```
 
 ---
 
 ## ⚖️ Clinical Disclaimer
-*Vaani Clinical is designed for clinical research, medical education, and telephony triage augmentation. It demonstrates conversational state modeling, algorithmic rule-out safety, and HL7 FHIR v4 interoperability. It does not replace direct clinical judgment by a licensed physician or emergency medical provider.*
+*Vaani Clinical is designed for clinical research, medical education, and telephony triage augmentation. It demonstrates conversational state modeling, algorithmic rule-out safety, clinical decision calculation, and HL7 FHIR v4 interoperability. It does not replace direct clinical judgment by a licensed physician or emergency medical provider.*
