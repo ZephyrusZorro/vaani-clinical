@@ -13,8 +13,7 @@ if (-not $pythonCmd) {
 }
 
 Write-Host "[OK] Python detected at $($pythonCmd.Source)" -ForegroundColor Green
-Write-Host "[OK] Starting Telemetry Server at http://127.0.0.1:8001 ..." -ForegroundColor Green
+Write-Host "[OK] Starting Intelligent Telemetry Launcher..." -ForegroundColor Green
 Write-Host ""
 
-Start-Process "http://127.0.0.1:8001"
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8001 --reload
+python run_server.py

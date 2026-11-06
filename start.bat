@@ -1,10 +1,12 @@
 @echo off
 setlocal
+chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
 cd /d "%~dp0"
 title Vaani Clinical Telemetry & Triage Workstation
 
 echo ========================================================================
-echo   VAANI CLINICAL (वाणी) - REAL-TIME CLINICAL VOICE & TRIAGE PLATFORM
+echo   VAANI CLINICAL -- REAL-TIME CLINICAL VOICE & TRIAGE PLATFORM
 echo ========================================================================
 echo.
 
@@ -15,12 +17,5 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [OK] Launching Vaani Clinical Telemetry Server on http://127.0.0.1:8001 ...
-echo [INFO] Press Ctrl+C in this terminal window to stop the service.
-echo.
-
-start "" http://127.0.0.1:8001
-
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8001 --reload
-
+python run_server.py
 pause
