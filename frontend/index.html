@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vaani Clinical (वाणी) — Real-Time Telephony & Medical Triage Intelligence</title>
+  <link rel="stylesheet" href="css/vaani.css">
+  <!-- Markdown parser for clinical notes -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <!-- ========================================================================
+       WINDOW MANAGER TOP BAR (.dbar)
+       ======================================================================== -->
+  <header class="dbar">
+    <div class="dbar-left">
+      <div class="window-dots">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+      </div>
+      <div class="prompt-badge">
+        <span class="logo">VAANI<span>.CLINICAL</span></span>
+        <span class="prompt-path">clinician@vaani:~$ /sys/triage/telephony.daemon</span>
+      </div>
+    </div>
+    <div class="dbar-right">
+      <div class="telemetry-status">
+        <span class="pulse-indicator"></span>
+        <span>TELEMETRY ONLINE [127.0.0.1:8001]</span>
+      </div>
+      <div class="digital-clock" id="clockDisplay">00:00:00 UTC</div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       CARDIAC ECG MONITOR & PATIENT TELEMETRY STRIP
+       ======================================================================== -->
+  <section class="telemetry-strip">
+    <div class="patient-hud">
+      <div class="hud-title">ACTIVE TELEPHONY SESSION</div>
+      <div class="hud-name">
+        <span id="hudPatientName">Robert Vance</span>
+        <span class="hud-mrn" id="hudPatientMRN">MRN-CV-88219</span>
+      </div>
+      <div class="hud-demographics" id="hudDemographics">62 yo • Male • Allergies: Penicillin (Anaphylaxis)</div>
+    </div>
+
+    <div class="ecg-container">
+      <div class="ecg-overlay-text">
+        <span>LEAD II ECG</span>
+        <span id="ecgHeartRate">HR: 88 BPM</span>
+        <span id="ecgRhythm">SINUS TACHYCARDIA</span>
+      </div>
+      <canvas id="ecgCanvas"></canvas>
+    </div>
+
+    <div class="vitals-quick-hud">
+      <div class="vital-item">
+        <span class="vital-label">NIBP</span>
+        <span class="vital-val danger" id="vitalBP">152/94</span>
+      </div>
+      <div class="vital-item">
+        <span class="vital-label">SpO2</span>
+        <span class="vital-val normal" id="vitalSpO2">96%</span>
+      </div>
+      <div class="vital-item">
+        <span class="vital-label">RR</span>
+        <span class="vital-val" id="vitalRR">22</span>
+      </div>
+      <div class="vital-item">
+        <span class="vital-label">TEMP</span>
+        <span class="vital-val" id="vitalTemp">37.2°C</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       WORKSPACE TAB NAVIGATION
+       ======================================================================== -->
+  <nav class="workspace-tabs">
+    <button class="tab-btn active" data-target="workspace-triage">
+      <span>📞</span> [1: CALL_TRIAGE]
+    </button>
+    <button class="tab-btn" data-target="workspace-soap">
+      <span>📋</span> [2: SOAP_NOTE_STUDIO]
+    </button>
+    <button class="tab-btn" data-target="workspace-labs">
+      <span>🧪</span> [3: BIOMARKER_LAB]
+    </button>
+    <button class="tab-btn" data-target="workspace-fhir">
+      <span>🌐</span> [4: FHIR_EXPLORER]
+    </button>
+    <button class="tab-btn" data-target="workspace-simulator">
+      <span>⚡</span> [5: CLINICAL_SIMULATOR]
+    </button>
+  </nav>
+
+  <!-- ========================================================================
+       MAIN VIEWPORT WORKSPACES
+       ======================================================================== -->
+  <main class="main-viewport">
+
+    <!-- WORKSPACE 1: CALL TRIAGE & TELEPHONY -->
+    <section id="workspace-triage" class="workspace-panel active">
+      <div class="triage-grid">
+        
+        <!-- Left: Telephony Chat Window -->
+        <div class="chat-telephony-window">
+          <div class="window-header">
+            <div class="window-title">
+              <span>VOICE INTAKE CHANNEL (ENCOUNTER: <strong id="currentEncounterId">ENC-88219</strong>)</span>
+            </div>
+            <div class="telephony-controls">
+              <button class="btn-ctrl" id="ttsToggleBtn">
+                <span id="ttsIcon">🔊</span> <span id="ttsStatus">TTS: ACTIVE</span>
+              </button>
+              <button class="btn-ctrl" id="micSimBtn">
+                <span>🎙️</span> SIMULATE VOICE
+              </button>
+              <button class="btn-ctrl" id="resetCallBtn">
+                <span>🔄</span> NEW CALL
+              </button>
+            </div>
+          </div>
+
+          <!-- Red Flag Emergency Alert Banner -->
+          <div class="emergency-banner hidden" id="emergencyBanner">
+            <div class="emergency-info">
+              <div class="emergency-icon">🚨</div>
+              <div class="emergency-text">
+                <strong id="emergencyTitle">EMERGENCY PROTOCOL ACTIVATED</strong><br>
+                <span id="emergencyAction">Dispatch EMS (911) immediately. Patient in high-acuity critical risk state.</span>
+              </div>
+            </div>
+            <button class="btn-code-red" id="escalate911Btn">⚡ ESCALATE EMS (911)</button>
+          </div>
+
+          <!-- Dialogue Stream -->
+          <div class="dialogue-stream" id="dialogueStream">
+            <div class="msg-row agent">
+              <div class="msg-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
+              <div class="msg-bubble">
+                Hello, this is the Vaani Clinical Triage Service. I am an intelligent clinical receptionist. 
+                Please describe what symptoms or medical emergency you are experiencing today.
+              </div>
+            </div>
+          </div>
+
+          <!-- Audio Frequency Visualizer Canvas -->
+          <div style="background: #060911; padding: 4px 16px; border-top: 1px solid var(--border-subtle);">
+            <canvas id="audioVisCanvas"></canvas>
+          </div>
+
+          <!-- Chat Input Bar -->
+          <form class="chat-input-bar" id="chatForm">
+            <input 
+              type="text" 
+              class="chat-input" 
+              id="patientInput" 
+              placeholder="Speak or type clinical symptoms (e.g. 'Crushing chest pain radiating to left arm 8/10...')" 
+              autocomplete="off"
+            >
+            <button type="submit" class="btn-send">SEND & TRIAGE</button>
+          </form>
+        </div>
+
+        <!-- Right: Telemetry Sidebar HUD -->
+        <div class="telemetry-sidebar">
+          
+          <!-- ESI Triage Score Card -->
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>TRIAGE CLASSIFICATION</span>
+              <span id="triagePhaseBadge">INTAKE</span>
+            </div>
+            <div class="esi-badge-container">
+              <div class="esi-badge esi-3" id="esiBadgeDisplay">ESI-3 URGENT</div>
+              <div class="esi-disposition" id="esiDispositionText">
+                Awaiting clinical symptom assessment and OLD CARTS parameters.
+              </div>
+            </div>
+          </div>
+
+          <!-- OLD CARTS Parameter Matrix -->
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>OLD CARTS (HPI INVESTIGATION)</span>
+              <span style="font-size: 10px; color: var(--neon-cyan);">AUTO-EXTRACT</span>
+            </div>
+            <div class="oldcarts-grid">
+              <div class="oldcart-card">
+                <div class="oldcart-letter">[O] ONSET</div>
+                <div class="oldcart-val empty" id="oldcartOnset">Pending...</div>
+              </div>
+              <div class="oldcart-card">
+                <div class="oldcart-letter">[L] LOCATION</div>
+                <div class="oldcart-val empty" id="oldcartLocation">Pending...</div>
+              </div>
+              <div class="oldcart-card">
+                <div class="oldcart-letter">[D] DURATION</div>
+                <div class="oldcart-val empty" id="oldcartDuration">Pending...</div>
+              </div>
+              <div class="oldcart-card">
+                <div class="oldcart-letter">[C] CHARACTER</div>
+                <div class="oldcart-val empty" id="oldcartCharacter">Pending...</div>
+              </div>
+              <div class="oldcart-card">
+                <div class="oldcart-letter">[A] AGGRAVATING</div>
+                <div class="oldcart-val empty" id="oldcartAggravating">Pending...</div>
+              </div>
+              <div class="oldcart-card">
+                <div class="oldcart-letter">[R] RELIEVING</div>
+                <div class="oldcart-val empty" id="oldcartRelieving">Pending...</div>
+              </div>
+              <div class="oldcart-card">
+                <div class="oldcart-letter">[R] RADIATION</div>
+                <div class="oldcart-val empty" id="oldcartRadiation">Pending...</div>
+              </div>
+              <div class="oldcart-card">
+                <div class="oldcart-letter">[S] SEVERITY</div>
+                <div class="oldcart-val empty" id="oldcartSeverity">-- / 10</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Differential Diagnoses -->
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>DIFFERENTIAL DIAGNOSES (ICD-10)</span>
+            </div>
+            <div class="differential-list" id="diffListContainer">
+              <div class="diff-item">
+                <div class="diff-header">
+                  <span>Awaiting symptom report</span>
+                  <span class="diff-icd">Z00.00</span>
+                </div>
+                <div class="diff-meta">Start dialogue to generate differentials.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- WORKSPACE 2: SOAP NOTE STUDIO -->
+    <section id="workspace-soap" class="workspace-panel">
+      <div class="soap-studio-container">
+        
+        <div class="soap-preview-card">
+          <div class="soap-toolbar">
+            <span style="font-family: var(--font-mono); font-size: 13px; color: #fff;">
+              ELECTRONIC HEALTH RECORD NOTE (SOAP SYNTHESIS)
+            </span>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-ctrl" id="generateSoapBtn">⚡ RE-SYNTHESIZE SOAP</button>
+              <button class="btn-ctrl" id="copySoapBtn">📋 COPY MARKDOWN</button>
+            </div>
+          </div>
+          <div class="soap-rendered" id="soapRenderedContent">
+            <p style="color: var(--text-dim); font-style: italic;">
+              No SOAP note generated yet. Conduct a triage conversation in Workspace 1 or load a preset case from Workspace 5, then click Re-synthesize SOAP.
+            </p>
+          </div>
+        </div>
+
+        <div class="telemetry-sidebar">
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>SOAP SECTION MAP</span>
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted); display: flex; flex-direction: column; gap: 10px;">
+              <div><strong style="color: var(--neon-cyan);">[S] SUBJECTIVE:</strong> Patient chief complaint, OLD CARTS narrative, allergies, medications, ROS.</div>
+              <div><strong style="color: var(--neon-green);">[O] OBJECTIVE:</strong> Cardiac telemetry, reported vitals, parsed LOINC lab biomarkers.</div>
+              <div><strong style="color: var(--neon-amber);">[A] ASSESSMENT:</strong> Primary ICD-10 diagnosis, ranked differentials, ESI rating.</div>
+              <div><strong style="color: var(--neon-red);">[P] PLAN:</strong> Disposition, workup orders, acute treatment, strict return precautions.</div>
+            </div>
+          </div>
+
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>CLINICAL AUTHENTICATION</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.5;">
+              Algorithm: ESI v4 / OLD CARTS<br>
+              EHR Interoperability: HL7 FHIR v4<br>
+              Standard Vocabularies: ICD-10-CM, LOINC, RxNorm<br>
+              Security: Mock HIPAA Enclave Compliant
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- WORKSPACE 3: BIOMARKER LAB (Sehatlings-Muaina Connection) -->
+    <section id="workspace-labs" class="workspace-panel">
+      <div class="lab-studio-container">
+        
+        <div class="lab-input-card">
+          <div class="hud-panel-title">
+            <span>LAB BIOMARKER EXTRACTOR (LOINC)</span>
+            <button class="btn-ctrl" id="pasteSampleLabBtn">SAMPLE LAB</button>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted);">
+            Paste unstructured hospital lab reports or point-of-care test results. 
+            Extracts Troponin, BNP, D-Dimer, Glucose, HbA1c, Creatinine, eGFR, Potassium, Sodium, Hemoglobin, WBC, ALT/AST.
+          </p>
+          <textarea 
+            class="lab-textarea" 
+            id="labInputText" 
+            placeholder="Example:&#10;Cardiac Troponin I: 1.45 ng/mL&#10;BNP: 420 pg/mL&#10;Serum Creatinine: 2.4 mg/dL&#10;Blood Glucose: 350 mg/dL&#10;Potassium: 5.8 mEq/L"
+          ></textarea>
+          <button class="btn-send" id="extractLabBtn" style="padding: 12px 0;">ANALYZE BIOMARKERS & UPDATE TRIAGE</button>
+        </div>
+
+        <div class="biomarker-table-container">
+          <div class="hud-panel-title" style="margin-bottom: 16px;">
+            <span>PARSED BIOMARKERS & CLINICAL THRESHOLDS</span>
+            <span id="bioOrganAlertCount" style="color: var(--neon-red); font-size: 12px; font-family: var(--font-mono);">0 Critical Alerts</span>
+          </div>
+
+          <table class="biomarker-table">
+            <thead>
+              <tr>
+                <th>BIOMARKER</th>
+                <th>LOINC</th>
+                <th>VALUE</th>
+                <th>REFERENCE</th>
+                <th>STATUS</th>
+                <th>INTERPRETATION</th>
+              </tr>
+            </thead>
+            <tbody id="biomarkerTableBody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 24px;">
+                  No biomarkers parsed yet. Paste lab results on the left or load a scenario from Workspace 5.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- WORKSPACE 4: FHIR EXPLORER -->
+    <section id="workspace-fhir" class="workspace-panel">
+      <div class="fhir-container">
+        <div class="soap-toolbar">
+          <span style="font-family: var(--font-mono); font-size: 13px; color: #fff;">
+            HL7 FHIR RELEASE 4 TRANSACTION BUNDLE
+          </span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-ctrl" id="generateFhirBtn">⚡ COMPILE FHIR v4 BUNDLE</button>
+            <button class="btn-ctrl" id="downloadFhirBtn">💾 DOWNLOAD JSON</button>
+          </div>
+        </div>
+        <pre class="fhir-code-view" id="fhirCodeView">// Click "Compile FHIR v4 Bundle" or execute a triage dialogue to generate transaction resources.</pre>
+      </div>
+    </section>
+
+    <!-- WORKSPACE 5: CLINICAL SIMULATOR -->
+    <section id="workspace-simulator" class="workspace-panel">
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 18px; color: #fff; margin-bottom: 6px;">Preset Clinical Telephony Scenarios</h2>
+        <p style="font-size: 13px; color: var(--text-muted);">
+          Select an emergency, urgent, or outpatient medical case to simulate patient phone intake, 
+          real-time telemetry, red-flag triggers, and automated SOAP / FHIR synthesis.
+        </p>
+      </div>
+      <div class="scenarios-grid" id="scenariosGrid">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
