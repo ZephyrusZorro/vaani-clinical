@@ -36,6 +36,20 @@ from backend.soap_synthesizer import SOAPSynthesizer
 from backend.fhir_generator import FHIRBundleGenerator
 from backend.scenarios import get_all_scenarios, get_scenario_by_id
 from backend.db import Database
+from backend.clinical_calculators import (
+    ClinicalCalculators,
+    HEARTScoreRequest,
+    HEARTScoreResult,
+    WellsPERequest,
+    WellsPEResult,
+    qSOFARequest,
+    qSOFAResult,
+    GCSRequest,
+    GCSResult
+)
+from backend.rx_safety import RxSafetyEngine, RxSafetyCheckRequest, RxSafetyReport
+from backend.evidence_grounding import EvidenceGroundingEngine, EvidenceGroundingReport
+from backend.avs_generator import AVSGenerator, AfterVisitSummary
 
 app = FastAPI(
     title="Vaani Clinical (वाणी) API",
@@ -57,6 +71,9 @@ triage_engine = ClinicalTriageEngine()
 biomarker_engine = BiomarkerExtractionEngine()
 soap_synthesizer = SOAPSynthesizer()
 fhir_generator = FHIRBundleGenerator()
+rx_safety_engine = RxSafetyEngine()
+evidence_engine = EvidenceGroundingEngine()
+avs_generator = AVSGenerator()
 db = Database()
 
 # In-memory session tracking for active encounters
@@ -220,6 +237,72 @@ def generate_fhir_bundle(req: FHIRGenerateRequest):
 @app.get("/api/encounters")
 def list_encounters():
     return db.list_encounters()
+
+
+# --- Clinical Decision Calculator Endpoints ---
+@app.post("/api/calculators/heart", response_model=HEARTScoreResult)
+def calculate_heart_score(req: HEARTScoreRequest):
+    return ClinicalCalculators.calculate_heart_score(req)
+
+
+@app.post("/api/calculators/wells-pe", response_model=WellsPEResult)
+def calculate_wells_pe(req: WellsPERequest):
+    return ClinicalCalculators.calculate_wells_pe(req)
+
+
+@app.post("/api/calculators/qsofa", response_model=qSOFAResult)
+def calculate_qsofa(req: qSOFARequest):
+    return ClinicalCalculators.calculate_qsofa(req)
+
+
+@app.post("/api/calculators/gcs", response_model=GCSResult)
+def calculate_gcs(req: GCSRequest):
+    return ClinicalCalculators.calculate_gcs(req)
+
+
+# --- Rx Safety & Allergy Interaction Endpoint ---
+@app.post("/api/safety/rx-check", response_model=RxSafetyReport)
+def check_rx_safety(req: RxSafetyCheckRequest):
+    return rx_safety_engine.evaluate_safety(req)
+
+
+# --- Patient After-Visit Summary (AVS) Endpoint ---
+class AVSGenerateRequest(BaseModel):
+    encounter_id: str
+    patient_profile: PatientProfile
+    assessment: TriageAssessment
+    soap_note: Optional[SOAPNote] = None
+
+
+@app.post("/api/triage/avs", response_model=AfterVisitSummary)
+def generate_patient_avs(req: AVSGenerateRequest):
+    return avs_generator.generate_avs(
+        encounter_id=req.encounter_id,
+        patient=req.patient_profile,
+        assessment=req.assessment,
+        soap_note=req.soap_note
+    )
+
+
+# --- Linked Evidence & Grounding Audit Endpoint (Abridge Model) ---
+class GroundingRequest(BaseModel):
+    encounter_id: str
+    soap_note: SOAPNote
+
+
+@app.post("/api/triage/grounding", response_model=EvidenceGroundingReport)
+def audit_evidence_grounding(req: GroundingRequest):
+    history = []
+    if req.encounter_id in active_sessions:
+        history = active_sessions[req.encounter_id]["dialogue_history"]
+    else:
+        history = db.get_dialogue_history(req.encounter_id)
+    
+    return evidence_engine.analyze_grounding(
+        encounter_id=req.encounter_id,
+        dialogue_history=history,
+        soap_note=req.soap_note
+    )
 
 
 # Mount frontend directory for single-page telemetry application
