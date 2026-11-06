@@ -80,6 +80,22 @@ db = Database()
 active_sessions: Dict[str, Dict[str, Any]] = {}
 
 
+def encounter_session(encounter_id: str) -> Dict[str, Any]:
+    """Lab entry and conversation share the same encounter, in either order."""
+    return active_sessions.setdefault(encounter_id, {
+        "patient_profile": PatientProfile(),
+        "dialogue_history": [],
+        "current_hpi": OLDCARTSParameters(),
+        "extracted_biomarkers": [],
+    })
+
+
+def merge_session_biomarkers(session: Dict[str, Any], incoming: List[BiomarkerRecord]):
+    latest = {item.test_code: item for item in session["extracted_biomarkers"]}
+    latest.update({item.test_code: item for item in incoming})
+    session["extracted_biomarkers"] = list(latest.values())
+
+
 # --- Request/Response Helper Schemas ---
 class BiomarkerExtractRequest(BaseModel):
     encounter_id: Optional[str] = "ENC-TEMP"
@@ -135,15 +151,7 @@ def get_scenario(scenario_id: str):
 @app.post("/api/triage/message", response_model=TriageMessageResponse)
 def process_message(req: TriageMessageRequest):
     enc_id = req.encounter_id
-    if enc_id not in active_sessions:
-        active_sessions[enc_id] = {
-            "patient_profile": req.patient_profile or PatientProfile(),
-            "dialogue_history": [],
-            "current_hpi": OLDCARTSParameters(),
-            "extracted_biomarkers": []
-        }
-
-    session = active_sessions[enc_id]
+    session = encounter_session(enc_id)
     if req.patient_profile:
         session["patient_profile"] = req.patient_profile
 
@@ -171,11 +179,7 @@ def process_message(req: TriageMessageRequest):
     # Check for lab biomarkers mentioned in the patient's message
     extracted_res = biomarker_engine.extract_from_text(req.patient_message)
     if extracted_res.biomarkers:
-        existing_codes = {b.test_code for b in session["extracted_biomarkers"]}
-        for b in extracted_res.biomarkers:
-            if b.test_code not in existing_codes:
-                session["extracted_biomarkers"].append(b)
-                existing_codes.add(b.test_code)
+        merge_session_biomarkers(session, extracted_res.biomarkers)
         db.save_biomarkers(enc_id, extracted_res.biomarkers)
 
     # Save encounter to SQLite
@@ -201,12 +205,7 @@ def extract_biomarkers(req: BiomarkerExtractRequest):
     result = biomarker_engine.extract_from_text(req.clinical_text)
     if req.encounter_id and result.biomarkers:
         db.save_biomarkers(req.encounter_id, result.biomarkers)
-        if req.encounter_id in active_sessions:
-            existing = {b.test_code for b in active_sessions[req.encounter_id]["extracted_biomarkers"]}
-            for b in result.biomarkers:
-                if b.test_code not in existing:
-                    active_sessions[req.encounter_id]["extracted_biomarkers"].append(b)
-                    existing.add(b.test_code)
+        merge_session_biomarkers(encounter_session(req.encounter_id), result.biomarkers)
     return result
 
 

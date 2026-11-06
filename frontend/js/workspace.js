@@ -7,9 +7,39 @@ function showNotice(message) {
   showNotice.timer = setTimeout(() => { notice.hidden = true; }, 9000);
 }
 
+function refreshEncounterUI() {
+  const pending = state.sendingEncounter === state.encounterId;
+  const labsPending = state.extractingEncounter === state.encounterId;
+  const complete = [Boolean(state.latestAssessment), state.extractedBiomarkers.length > 0, Boolean(state.lastSoapNote && state.lastFhirBundle)];
+  const rows = ["progress-intake", "progress-labs", "progress-records"];
+  const descriptions = [pending ? "Listening and assessing…" : complete[0] ? "Symptoms captured" : "Waiting for the first message", labsPending ? "Reviewing the lab panel…" : complete[1] ? `${state.extractedBiomarkers.length} results in this encounter` : "Add results when available", complete[2] ? "Note and FHIR export ready" : "Generate a note and FHIR export"];
+  rows.forEach((id, index) => {
+    const row = document.getElementById(id);
+    if (!row) return;
+    const busy = index === 0 ? pending : index === 1 && labsPending;
+    row.dataset.state = busy ? "pending" : complete[index] ? "complete" : "waiting";
+    row.querySelector("small").textContent = descriptions[index];
+    row.querySelector(".step-mark").textContent = busy ? "◌" : complete[index] ? "✓" : "○";
+  });
+  const counter = document.getElementById("encounter-progress-count");
+  if (counter) counter.textContent = `${complete.filter(Boolean).length} / 3 complete`;
+  const starter = document.getElementById("intake-starter");
+  if (starter) starter.hidden = state.dialogueHistory.length > 0;
+  const send = document.querySelector('#chatForm button[type="submit"]');
+  if (send) { send.disabled = pending || labsPending; send.textContent = pending ? "Assessing…" : labsPending ? "Reviewing labs…" : "Send message ↗"; }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("[data-intake-prompt]").forEach(button => {
+    button.addEventListener("click", () => {
+      const input = document.getElementById("patientInput");
+      input.value = button.dataset.intakePrompt;
+      input.focus();
+    });
+  });
+  refreshEncounterUI();
   const copy = {
-    "suite-telephony": ["Clinical intake", "From the first conversation to a complete encounter."],
+    "suite-telephony": ["Clinical intake", "A focused space to listen, assess, and bring the details together."],
     "suite-pathology": ["Lab results", "Bring lab values into the picture. See what needs attention."],
     "suite-decision": ["Decision support", "Review risk scores and medication interactions in context."],
     "suite-scribe": ["Encounter records", "The conversation, organized. Ready for review and export."],

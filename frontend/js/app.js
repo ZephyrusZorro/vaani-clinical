@@ -34,6 +34,7 @@ const state = {
   extractedBiomarkers: [],
   ttsActive: false,
   sendingEncounter: null,
+  extractingEncounter: null,
   revision: 0,
   lastSoapNote: null,
   lastFhirBundle: null,
@@ -193,6 +194,8 @@ function updatePatientHUD() {
     : 'No known drug allergies';
   if (el.hudDemographics) el.hudDemographics.textContent = `${ageSex} • ${allergies}`;
   if (el.rxAllergiesInput) el.rxAllergiesInput.value = state.patientProfile.allergies.join(", ");
+  if (el.currentEncounterId) el.currentEncounterId.title = state.encounterId;
+  window.refreshEncounterUI?.();
 }
 
 
@@ -613,6 +616,7 @@ function initEventHandlers() {
     e.preventDefault();
     const text = el.patientInput.value.trim();
     if (!text) return;
+    if (state.sendingEncounter === state.encounterId || state.extractingEncounter === state.encounterId) { showNotice("Please wait for the current update to finish. Your message is still here."); return; }
     el.patientInput.value = "";
     sendPatientMessage(text);
   });
@@ -725,6 +729,7 @@ function clearGeneratedRecords() {
   el.evidenceScoreBadge.textContent = "Not audited";
   el.printableChartBody.replaceChildren();
   el.chartModalOverlay.classList.remove("active");
+  window.refreshEncounterUI?.();
 }
 function resetEncounter(profile = state.patientProfile) {
   state.encounterId = "ENC-" + crypto.randomUUID();
@@ -735,6 +740,8 @@ function resetEncounter(profile = state.patientProfile) {
   state.latestAssessment = null;
   state.extractedBiomarkers = [];
   state.sendingEncounter = null;
+  state.extractingEncounter = null;
+  el.extractLabBtn.disabled = false;
   window.speechSynthesis?.cancel();
   state.speechRecognizer?.abort();
   stopLiveMic();
@@ -752,13 +759,14 @@ function resetEncounter(profile = state.patientProfile) {
 // --- SEND PATIENT MESSAGE TO BACKEND API ---
 async function sendPatientMessage(text) {
   const encounterId = state.encounterId;
-  if (state.sendingEncounter === encounterId) return false;
+  if (state.sendingEncounter === encounterId || state.extractingEncounter === encounterId) { showNotice("Please wait for the current encounter update to finish."); return false; }
   state.sendingEncounter = encounterId;
   state.revision += 1;
   clearGeneratedRecords();
   const sendButton = el.chatForm.querySelector('button[type="submit"]');
   if (sendButton) sendButton.disabled = true;
   appendChatBubble("patient", text);
+  window.refreshEncounterUI?.();
   pulseAudioVis(1200);
 
   try {
@@ -794,6 +802,7 @@ async function sendPatientMessage(text) {
     if (state.sendingEncounter === encounterId) {
       state.sendingEncounter = null;
       if (sendButton) sendButton.disabled = false;
+      window.refreshEncounterUI?.();
     }
   }
 }
@@ -835,6 +844,7 @@ function appendChatBubble(role, content, speechText = null) {
   el.dialogueStream.scrollTop = el.dialogueStream.scrollHeight;
 
   state.dialogueHistory.push({ role, content });
+  window.refreshEncounterUI?.();
 }
 
 
@@ -947,10 +957,14 @@ function resetTriageHUD() {
 
 // --- SCANUP VISUAL PATHOLOGY GAUGES (Inspired by Sehatlings Muaina) ---
 async function extractBiomarkersFromText(clinicalText) {
+  if (state.sendingEncounter === state.encounterId || state.extractingEncounter === state.encounterId) { showNotice("Finish the current update before reviewing another panel."); return; }
+  state.extractingEncounter = state.encounterId;
+  el.extractLabBtn.disabled = true;
   state.revision += 1;
   clearGeneratedRecords();
   const requestEncounter = state.encounterId;
   const requestRevision = state.revision;
+  window.refreshEncounterUI?.();
   try {
     const res = await apiFetch("/api/triage/biomarkers", {
       method: "POST",
@@ -965,20 +979,28 @@ async function extractBiomarkersFromText(clinicalText) {
     const data = await res.json();
     if (state.encounterId !== requestEncounter || state.revision !== requestRevision) return;
 
-    state.extractedBiomarkers = data.biomarkers;
-    renderScanUpGauges(data.biomarkers);
-
-    el.bioOrganAlertCount.textContent = `${data.critical_count} Critical Derangement(s)`;
-    el.bioOrganAlertCount.style.color = data.critical_count > 0 ? "var(--clinical-rose)" : "var(--clinical-emerald)";
+    const latest = new Map(state.extractedBiomarkers.map(item => [item.test_code, item]));
+    data.biomarkers.forEach(item => latest.set(item.test_code, item));
+    state.extractedBiomarkers = [...latest.values()];
+    renderScanUpGauges(state.extractedBiomarkers);
 
   } catch (err) {
     console.error("ScanUp lab error:", err);
-    showNotice("Biomarker extraction error: " + err.message);
+    if (state.encounterId === requestEncounter) showNotice("Biomarker extraction error: " + err.message);
+  } finally {
+    if (state.extractingEncounter === requestEncounter) {
+      state.extractingEncounter = null;
+      el.extractLabBtn.disabled = false;
+      window.refreshEncounterUI?.();
+    }
   }
 }
 
 function renderScanUpGauges(biomarkers) {
   if (!el.biomarkerGaugesGrid) return;
+  const critical = (biomarkers || []).filter(item => item.status.startsWith("CRITICALLY_")).length;
+  el.bioOrganAlertCount.textContent = biomarkers?.length ? `${critical} critical result${critical === 1 ? "" : "s"}` : "No results";
+  el.bioOrganAlertCount.style.color = critical > 0 ? "var(--clinical-rose)" : "var(--clinical-emerald)";
   if (!biomarkers || biomarkers.length === 0) {
     el.biomarkerGaugesGrid.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; color: var(--text-dim); padding: 48px;">
@@ -1023,7 +1045,7 @@ function renderScanUpGauges(biomarkers) {
 
 // --- SOAP NOTE SYNTHESIS ---
 async function generateSOAPNote() {
-  if (state.sendingEncounter === state.encounterId) { showNotice("Finish the current intake before generating a document."); return; }
+  if (state.sendingEncounter === state.encounterId || state.extractingEncounter === state.encounterId) { showNotice("Finish the current update before generating a document."); return; }
   const requestEncounter = state.encounterId;
   const requestRevision = state.revision;
   if (!state.latestAssessment) {
@@ -1238,7 +1260,7 @@ async function runRxSafetyCheck() {
 
 // --- PATIENT AFTER-VISIT SUMMARY (AVS) ---
 async function generatePatientAVS() {
-  if (state.sendingEncounter === state.encounterId) { showNotice("Finish the current intake before generating a document."); return; }
+  if (state.sendingEncounter === state.encounterId || state.extractingEncounter === state.encounterId) { showNotice("Finish the current update before generating a document."); return; }
   const requestEncounter = state.encounterId;
   const requestRevision = state.revision;
   if (!state.latestAssessment) {
@@ -1289,7 +1311,7 @@ async function generatePatientAVS() {
 }
 
 function openPrintableChartModal() {
-  if (state.sendingEncounter === state.encounterId) { showNotice("Finish the current intake before opening the chart."); return; }
+  if (state.sendingEncounter === state.encounterId || state.extractingEncounter === state.encounterId) { showNotice("Finish the current update before opening the chart."); return; }
   if (!state.latestAssessment) {
     showNotice("Please conduct a clinical intake or load a scenario first.");
     return;
@@ -1352,7 +1374,7 @@ function openPrintableChartModal() {
 
 // --- HL7 FHIR RELEASE 4 COMPILATION ---
 async function compileFHIRBundle() {
-  if (state.sendingEncounter === state.encounterId) { showNotice("Finish the current intake before generating a document."); return; }
+  if (state.sendingEncounter === state.encounterId || state.extractingEncounter === state.encounterId) { showNotice("Finish the current update before generating a document."); return; }
   const requestEncounter = state.encounterId;
   const requestRevision = state.revision;
   if (!state.latestAssessment) return;
@@ -1378,6 +1400,7 @@ async function compileFHIRBundle() {
     state.lastFhirBundle = bundle;
 
     el.fhirCodeView.textContent = JSON.stringify(bundle.raw_fhir_json, null, 2);
+    window.refreshEncounterUI?.();
 
   } catch (err) {
     console.error("FHIR error:", err);

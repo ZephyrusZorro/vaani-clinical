@@ -25,7 +25,7 @@
     <div class="clinician-status-badge"><span class="demo-badge"><span class="trust-dot"></span>Educational simulation</span><span class="digital-time-clock" id="clockDisplay">00:00:00 UTC</span><span class="clinician-avatar" title="Faris Ruknuddin">FR</span></div>
   </header>
   <section class="workspace-intro" aria-labelledby="workspaceTitle">
-    <div><div class="eyebrow">CARE, WITH CLARITY <span>/ 01</span></div><h1 id="workspaceTitle">Clinical intake<span class="title-period">.</span></h1><p id="workspaceDescription">From the first conversation to a complete encounter.</p></div>
+    <div><div class="eyebrow">CONNECTED CARE WORKSPACE <span>/ 01</span></div><h1 id="workspaceTitle">Clinical intake<span class="title-period">.</span></h1><p id="workspaceDescription">A focused space to listen, assess, and bring the details together.</p></div>
     <button class="intro-action" id="exploreScenariosBtn">Explore scenarios <span aria-hidden="true">↗</span></button>
   </section>
 
@@ -35,7 +35,7 @@
   <section class="icu-telemetry-hub">
 
     <!-- Patient Identity Card -->
-    <div class="patient-identity-card"><span class="section-kicker">DEMO PATIENT</span>
+    <div class="patient-identity-card"><span class="section-kicker"><span class="patient-identity-mark" aria-hidden="true">+</span>DEMO PATIENT</span>
       <div class="identity-header">
         <span class="patient-name-display" id="hudPatientName">Robert Vance</span>
         <span class="patient-mrn-badge" id="hudPatientMRN">MRN-CV-88219</span>
@@ -154,6 +154,17 @@
             </div>
           </div>
 
+          <div class="intake-starter" id="intake-starter">
+            <div class="starter-symbol" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M5 17h6l3-8 4 15 3-7h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="starter-eyebrow">A GOOD CONVERSATION STARTS HERE</div>
+            <h2>Begin a patient intake</h2>
+            <p>Describe the symptoms in your own words, or start with a sample below. Nothing is sent until you’re ready.</p>
+            <div class="intake-prompt-row">
+              <button type="button" data-intake-prompt="I have had a mild headache since yesterday. The pain is about 3 out of 10."><span>01</span>Headache <span aria-hidden="true">↗</span></button>
+              <button type="button" data-intake-prompt="I have had a sore throat and a cough for three days."><span>02</span>Cough & sore throat <span aria-hidden="true">↗</span></button>
+              <button type="button" data-intake-prompt="I have been feeling tired for the last week."><span>03</span>Fatigue <span aria-hidden="true">↗</span></button>
+            </div>
+          </div>
           <!-- Audio Spectral Visualizer & VU Meter -->
           <div class="spectral-bar">
             <span style="font-family: var(--font-code); font-size: 10px; color: var(--text-dim);">SPECTRAL VAD:</span>
@@ -176,6 +187,14 @@
 
         <!-- Right: Telemetry Sidebar HUD -->
         <div class="telemetry-sidebar-col">
+          <div class="glass-panel encounter-progress-card">
+            <div class="progress-heading"><span>Encounter progress</span><span id="encounter-progress-count">0 / 3 complete</span></div>
+            <ol class="encounter-steps">
+              <li id="progress-intake" data-state="waiting"><span class="step-number">01</span><span><strong>Patient intake</strong><small>Waiting for the first message</small></span><span class="step-mark" aria-hidden="true">○</span></li>
+              <li id="progress-labs" data-state="waiting"><span class="step-number">02</span><span><strong>Lab review</strong><small>Add results when available</small></span><span class="step-mark" aria-hidden="true">○</span></li>
+              <li id="progress-records" data-state="waiting"><span class="step-number">03</span><span><strong>Documentation</strong><small>Generate a note and FHIR export</small></span><span class="step-mark" aria-hidden="true">○</span></li>
+            </ol>
+          </div>
 
           <!-- ESI Triage Score Card -->
           <div class="glass-panel triage-hud-card">

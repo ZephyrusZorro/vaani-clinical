@@ -1,21 +1,23 @@
-# Pearl interface verification — 2026-11-07
+# Vaani interface verification — 2026-11-07
 
-## Delivered
-- Pearl design layer, responsive layouts, local fonts, keyboard navigation, focus-managed dialogs, reduced-motion transitions, and visible request notifications.
-- Accurate educational/simulation labels replacing unsupported hospital, physician, encryption, and real-dispatch claims.
-- Safe transcript and generated-note rendering without a remote Markdown dependency.
-- Complete encounter artifact reset, note invalidation after new lab input, and encounter/revision checks for late responses.
-- Document generation blocked while a newer intake is pending.
-- Unknown scenario IDs return 404 instead of another patient's case.
-- Legacy API walkthrough no longer runs during pytest collection.
+## Current interface
+Pearl with deep teal, higher contrast text, differentiated glass surfaces, guided intake prompts, and progress derived from actual encounter state. Mobile layouts, reduced motion, accessible dialogs, safe document rendering, and educational simulation labels remain in place.
 
-## Evidence
-- `python -m pytest -q`: 40 passed.
-- `python tests/browser_regressions.py URL`: 5 regression cases passed, covering literal transcript text, cleared documents, new labs, pending intake, and late medication checks.
-- `python tests/browser_smoke.py URL`: all 5 prepared scenarios through intake, labs, SOAP, evidence and FHIR; calculator and medication controls; actual FHIR download; AVS/chart previews; keypad; Escape and focus restoration.
-- All 5 workspaces checked at widths 1440, 768, and 390 pixels: no page overflow, no uncaught JavaScript errors in the feature walkthrough.
-- JavaScript syntax and Git whitespace checks passed. Desktop and mobile screenshots reviewed.
-- Independent review identified two stale-response races in Vaani; focused browser regressions reproduced them before correction and passed afterward.
+## Correctness improvements
+- New values replace previous results for the same biomarker; partial panels preserve other results.
+- Labs entered before the first conversation remain in the encounter.
+- Conflicting lab/intake updates are serialized. Pending lab review blocks old document generation.
+- The critical-result badge updates from cumulative results, including conversational corrections.
+- Previous reset, stale-response, safe-rendering, missing-scenario and pytest-collection fixes remain covered.
+
+## Verification
+- Backend suite: 43 tests.
+- Browser regressions: 5 original plus 5 product cases.
+- Feature walkthrough: 5 scenarios, intake, labs, SOAP, evidence, FHIR, JSON download, calculators, medication review, chart/AVS, keypad, print styles and dialog focus.
+- All 5 workspaces at 1440, 1024, 768 and 390 pixels: no page overflow.
+- JavaScript syntax checks and desktop/mobile screenshot inspection.
+- Independent review reproduced a stale critical-count badge; a failing browser regression passed after correction.
+- Browser review uses disposable databases. Scripts use whichever server URL is supplied.
 
 ## Boundaries
-These are local synthetic tests, not clinical validation. Real microphone permissions, recognition accuracy, voice playback, real patients, emergency dispatch, healthcare compliance, and external EHR ingestion were not validated. Existing Starlette/httpx test-client deprecation warning remains. Browser checks create synthetic local records. No database is committed.
+Local synthetic verification is not clinical validation. Real microphone permissions, recognition accuracy, voice playback, real patients, emergency dispatch, compliance and external EHR ingestion were not validated. The existing Starlette/httpx test-client warning remains. No database is committed.

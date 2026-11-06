@@ -261,3 +261,149 @@ h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(28px, 3vw, 40px)
   .softphone-controls .btn-action { min-height: 38px; }
   .suite-tab-btn { min-height: 42px; }
 }
+
+/* Refinement: pearl and deep teal, with stronger hierarchy and purposeful detail. */
+:root {
+  --bg-deep: #edf3f8; --bg-surface: #f5f9fd; --bg-card: #eff5fa;
+  --text-primary: #18364a; --text-secondary: #48657b; --text-muted: #5d7387; --text-dim: #63778a;
+  --clinical-cyan: #087e8b; --clinical-emerald: #087e80; --clinical-blue: #2a77b5;
+  --clinical-purple: #7d66a9; --clinical-amber: #a36517; --clinical-rose: #bd455d;
+  --border-subtle: #284e6c1c; --border-hover: #087e8b55;
+  --shadow-card: 0 14px 35px -24px #193e6870,inset 0 1px #ffffff;
+}
+body { background: radial-gradient(ellipse at 90% 12%,#bce5f044,transparent 42%),radial-gradient(ellipse at 0 90%,#c9d4f13d,transparent 40%),#edf3f8; }
+.hospital-header { height: 78px; background: #ffffffbf; border-color: #31577417; box-shadow: 0 3px 18px #27436006; }
+.brand-pulse-icon { background: linear-gradient(145deg,#126f7a,#153e58); border-color: #43949e; box-shadow: 0 5px 18px #087e8b25; color: #eaffff; }
+.brand-title { color: #153d52; font-weight: 600; }
+.brand-title span.hindi-title { color: #417a88; }
+.brand-subtitle { color: #5c778d; }
+.header-location { color: #315570; border-color: #cbdbe8; }
+.header-location > span:first-child, .header-slash { color: #74899c; }
+.clinician-avatar { background: #e0f0f5; border-color: #bddde6; color: #1c6776; }
+.demo-badge { color: #4e6b7c; font-size: 11px; }
+.trust-dot { background: #0a9b9c; }
+.workspace-intro { margin-top: 26px; padding: 28px 32px; border-radius: 23px; border: 1px solid #ffffff44; background: radial-gradient(ellipse at 91% 0,#17acb236,transparent 58%),linear-gradient(115deg,#102e48,#13495b); box-shadow: 0 15px 35px -22px #0b3b6799,inset 0 1px #fff1; position: relative; overflow: hidden; min-height: 168px; }
+.workspace-intro::after { content: ""; pointer-events: none; position: absolute; width: 240px; height: 240px; right: 200px; top: -120px; border: 1px solid #80d3d621; border-radius: 50%; box-shadow: 0 0 0 38px #80d3d607,0 0 0 76px #80d3d604; }
+.eyebrow { color: #83c7d2; font-size: 9px; letter-spacing: .15em; }
+.eyebrow span { color: #699fb3; }
+.workspace-intro h1 { color: #f2fbff; font-size: clamp(32px,3.2vw,46px); font-weight: 500; letter-spacing: -1.6px; }
+.title-period { color: #63e1d5; }
+.workspace-intro p { color: #b5d3e2; font-size: 13px; }
+.intro-action { color: #ddffff; background: #9fe2e610; border-color: #93dbde55; padding: 12px 18px; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1; }
+.intro-action:hover { background: #9fe2e62b; color: #fff; border-color: #a4f0ee88; box-shadow: 0 5px 18px #062e3a33; }
+.icu-telemetry-hub { margin-top: 20px; padding: 22px 24px; background: linear-gradient(110deg,#14364af2,#1a4653ed); border-color: #4b829755; box-shadow: 0 12px 28px -18px #173e6f80,inset 0 1px #bddbec0d; gap: 26px; }
+.section-kicker { color: #84b4c4; display: flex; align-items: center; gap: 7px; font-size: 9px; }
+.patient-identity-mark { border: 1px solid #80c9d540; background: #69cad610; color: #96dce5; width: 17px; height: 17px; border-radius: 5px; display: inline-grid; place-items: center; font-size: 13px; line-height: 1; }
+.patient-name-display { color: #f1fbff; font-size: 21px; }
+.patient-mrn-badge { color: #a8d9e3; background: #7dd3e017; border: 1px solid #8ed8e41b; font-size: 9px; }
+.patient-demographics-text { color: #a6c1d1; font-size: 11px; }
+.ecg-monitor-frame { border-color: #74b1bd44; background: #071e2a; box-shadow: inset 0 1px #d2eeff08; }
+#ecgCanvas { height: 66px; }
+.ecg-overlay-header { color: #89c9c7; font-size: 8px; }
+.arrhythmia-bar { background: #1b4554; border-color: #84c4cb25; padding-block: 7px; }
+.rhythm-pill { color: #accbd5; font-size: 9px; }
+.rhythm-pill:hover { color: #e5fffc; background: #91e2dc17; }
+.rhythm-pill.active { color: #bdfff1; background: #29bca52b; }
+.arrhythmia-bar .hr-slider-group span { color: #acceda !important; }
+.vitals-meter-cluster { gap: 13px; }
+.vital-box-label { color: #8fb4c4; font-size: 9px; }
+.vital-box-value { color: #e2f3fd; font-size: 24px; }
+.vital-box-value.danger { color: #ff9aad; }
+.vital-box-value.normal { color: #7fe1cb; }
+.vital-box-value.warn { color: #f6d19b; }
+.product-suite-tabs { margin-top: 22px; border-color: #bfd0e0; padding-bottom: 12px; gap: 8px; }
+.suite-tab-btn { color: #506d86; font-size: 13px; padding: 11px 20px; }
+.suite-tab-btn svg { width: 17px; height: 17px; }
+.suite-tab-btn:hover { color: #096b7b; background: #ffffffbd; }
+.suite-tab-btn.active { background: linear-gradient(110deg,#087e8b,#126783); border-color: #0d7185; color: #fff; box-shadow: 0 5px 15px #087e8b28,inset 0 1px #fff2; }
+.glass-panel { background: linear-gradient(145deg,#ffffffed,#f9fcffcf); border-color: #fff; box-shadow: 0 10px 30px -22px #1d4e7990,inset 0 1px #ffffff; }
+.triage-workspace-grid { gap: 22px; }
+.telephony-card { min-height: 760px; border-color: #cddde9; box-shadow: 0 14px 35px -25px #1d4e7990; }
+.telephony-header { border-color: #d8e4ee; background: linear-gradient(100deg,#f2f9fc,#f5f8fe); padding: 17px 22px; }
+.call-badge-live { color: #5f7a91; font-size: 9px; }
+#currentEncounterId { color: #2d6279 !important; }
+.btn-action { background: #eff6fa; color: #355d75; border-color: #cfdfeb; font-size: 11px; min-height: 34px; }
+.btn-action:hover { background: #e0f1f4; border-color: #85c5cf; color: #096f7f; box-shadow: 0 3px 10px #087e8b0c; }
+.bubble-meta { color: #5f8194; font-size: 10px; }
+.bubble-text { font-size: 14px; line-height: 1.85; }
+.message-bubble-row.agent .bubble-text { background: #eaf5f7; color: #2f5668; border-color: #c5e4e8; }
+.message-bubble-row.patient .bubble-text { background: linear-gradient(115deg,#087e8b,#1b6280); color: #fff; border-color: #087e8b; }
+.telephony-card:has(.intake-starter:not([hidden])) .chat-transcript-area { min-height: 0; flex: 0; max-height: 230px; padding-bottom: 12px; }
+.intake-starter { padding: 20px 32px 36px; margin: auto 0; text-align: center; }
+.intake-starter[hidden] { display: none; }
+.starter-symbol { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 20px; border-radius: 20px; border: 1px solid #c5e3eb; background: linear-gradient(135deg,#ddf4f5,#e7f0fc); box-shadow: 0 10px 24px -15px #388cad66,inset 0 1px #fff; color: #178797; }
+.starter-symbol svg { width: 39px; height: 39px; }
+.starter-eyebrow { font-size: 8px; color: #7394a7; letter-spacing: .12em; margin-bottom: 8px; }
+.intake-starter h2 { font-family: 'Space Grotesk',sans-serif; color: #1c4a63; font-size: 25px; font-weight: 500; letter-spacing: -.7px; }
+.intake-starter p { font-size: 12px; color: #648297; max-width: 400px; margin: 10px auto 20px; line-height: 1.8; }
+.intake-prompt-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.intake-prompt-row button { display: flex; align-items: center; gap: 10px; border: 1px solid #cbdee9; background: #f3f9fc; color: #35637a; border-radius: 10px; padding: 10px 12px; font-size: 11px; }
+.intake-prompt-row button > span:first-child { color: #85a8bc; font-size: 8px; font-family: var(--font-code); }
+.intake-prompt-row button > span:last-child { color: #20869a; }
+.intake-prompt-row button:hover { background: #e6f3f7; border-color: #76bdcc; transform: translateY(-2px); box-shadow: 0 5px 12px #2a799215; }
+.spectral-bar { background: #eff6fa; border-color: #d8e6ef; }
+.telephony-input-dock { border-color: #d6e4ed; background: #f7fbfd; }
+.triage-input-field { background: #fff; border-color: #c5dbe6; color: #24495f; font-size: 13px; min-height: 48px; box-shadow: inset 0 1px 4px #213b5005; }
+.triage-input-field::placeholder { color: #7292a5; }
+.btn-triage-send { background: linear-gradient(110deg,#087f8c,#116985); border-color: #08778a; box-shadow: 0 4px 12px #087e8b22,inset 0 1px #fff2; font-size: 12px; min-height: 48px; }
+.btn-triage-send:hover { background: #0a6075; box-shadow: 0 5px 18px #087e8b33; }
+.telemetry-sidebar-col { gap: 16px; }
+.encounter-progress-card { padding: 20px; }
+.progress-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: #244e67; font-weight: 600; }
+#encounter-progress-count { font-size: 9px; color: #2b8b92; background: #e3f3f4; padding: 4px 6px; border-radius: 5px; font-weight: 500; white-space: nowrap; }
+.encounter-steps { list-style: none; margin-top: 14px; display: grid; gap: 0; }
+.encounter-steps li { display: flex; align-items: center; gap: 10px; padding: 9px 0; position: relative; }
+.step-number { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: #edf3f8; color: #7b98ac; border: 1px solid #dce7ee; font-size: 9px; font-family: var(--font-code); flex-shrink: 0; }
+.encounter-steps strong { font-size: 11px; color: #52758a; font-weight: 500; display: block; }
+.encounter-steps small { display: block; font-size: 9px; color: #7590a2; margin-top: 2px; }
+.step-mark { margin-left: auto; color: #a8bdca; font-size: 13px; }
+.encounter-steps li[data-state=complete] .step-number { background: #dff3f1; color: #07847e; border-color: #a7dcd9; }
+.encounter-steps li[data-state=complete] .step-mark { color: #07847e; }
+.encounter-steps li[data-state=complete] strong { color: #24616c; }
+.encounter-steps li[data-state=pending] .step-number { background: #e5edfc; color: #4477c4; border-color: #aec6ee; }
+.encounter-steps li[data-state=pending] .step-mark { color: #4477c4; }
+.hud-card-title { color: #345e77; font-size: 12px; text-transform: none; border-color: #dae6ee; }
+.esi-level-box { background: linear-gradient(130deg,#edf8f9,#edf3fc); border-color: #c5e0e9; padding: 14px; }
+.esi-disposition-summary { color: #57798c; font-size: 11px; }
+.esi-tag { font-weight: 600; }
+.oldcarts-slot { background: #edf5fa; border: 1px solid #dfeaf1; padding: 9px 11px; }
+.oldcarts-slot-label { color: #3a7e98; font-size: 9px; }
+.oldcarts-slot-value { color: #315e78; font-size: 12px; }
+.oldcarts-slot-value.empty { color: #6a879b; }
+.diff-card { background: #eef6fa; border-color: #d7e6f0; }
+.diff-meta-desc { color: #5a7a91; font-size: 12px; }
+.diff-icd-chip { background: #d9edf3; color: #36859c; }
+.lab-intake-textarea, .calc-form-control { background: #f3f8fc; border-color: #cbdfe9; color: #244d66; }
+.bio-gauge-card { background: #f9fcff; border-color: #d8e7f1; box-shadow: 0 5px 15px #1d4e7905; }
+.calc-result-summary { background: #edf6fa; border-color: #c9e0eb; }
+.evidence-card-item { background: #eff7fb; border-color: #d5e5ef; }
+#fhirCodeView { background: #112c42 !important; color: #afd6ed !important; }
+.case-card { background: linear-gradient(135deg,#ffffff,#f0f7fc); border-color: #cbdfea; box-shadow: 0 10px 25px -20px #214e7880; }
+.case-card:hover { border-color: #54a8ba; box-shadow: 0 12px 25px -15px #087e8b44; }
+.case-card-title { color: #1f536c; font-size: 18px; }
+.workspace-footer { color: #5b7c92; border-color: #c6d7e5; }
+.workspace-footer > span:first-child { color: #3d7187; }
+.app-notice { background: #153f55f5; border-color: #7fb4c655; }
+@media (max-width:1200px) { .vitals-meter-cluster { border-color: #82b9ca33; } }
+@media (max-width:850px) { .telephony-card { min-height: 650px; } .telemetry-sidebar-col { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } .telemetry-sidebar-col > :last-child { grid-column: auto; } }
+@media (max-width:560px) {
+  .workspace-intro { margin-top: 18px; padding: 24px 20px; min-height: 170px; align-items: center; }
+  .workspace-intro h1 { font-size: 31px; letter-spacing: -1px; }
+  .workspace-intro p { font-size: 11px; max-width: 210px; }
+  .eyebrow { font-size: 7px; }
+  .intro-action { font-size: 9px; padding: 10px; max-width: 85px; }
+  .icu-telemetry-hub { margin-top: 16px; padding: 20px; }
+  .patient-demographics-text { font-size: 11px; }
+  .vital-box-value { font-size: 22px; }
+  .vital-box-label { font-size: 8px; }
+  .suite-tab-btn { font-size: 12px; padding-inline: 14px; }
+  .telephony-card { min-height: 760px; }
+  .intake-starter { padding: 20px 18px 28px; }
+  .intake-starter h2 { font-size: 23px; }
+  .intake-starter p { font-size: 12px; }
+  .intake-prompt-row { flex-direction: column; }
+  .intake-prompt-row button { justify-content: flex-start; min-height: 42px; }
+  .intake-prompt-row button > span:last-child { margin-left: auto; }
+  .telemetry-sidebar-col { display: flex; flex-direction: column; }
+  .triage-input-field { font-size: 12px; }
+}

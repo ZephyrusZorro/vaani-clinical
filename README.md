@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![HL7 FHIR v4](https://img.shields.io/badge/HL7_FHIR-Release_4-orange.svg)](https://hl7.org/fhir/R4/)
-[![Tests Passing](https://img.shields.io/badge/pytest-40%20passed-brightgreen.svg)]()
+[![Tests Passing](https://img.shields.io/badge/pytest-43%20passed-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Vaani (वाणी)** — Sanskrit/Hindi for *Voice*, *Speech*, or *The Spoken Word*.  
@@ -14,7 +14,7 @@
 
 ## Pearl workspace
 
-A light clinical workspace with frosted surfaces, muted teal accents, responsive layouts, and restrained transitions. The five workspaces cover intake, lab results, decision support, documentation, and scenarios. Motion respects the system's reduced-motion preference; dialogs support keyboard focus and Escape.
+A pearl clinical workspace with deep teal surfaces, crisp typography, guided intake prompts, live encounter progress, responsive layouts, and restrained transitions. The five workspaces cover intake, lab results, decision support, documentation, and scenarios. Motion respects the system's reduced-motion preference; dialogs support keyboard focus and Escape.
 
 ![Vaani Pearl workspace](docs/screenshots/desktop.png)
 
@@ -186,7 +186,7 @@ Navigate to **`http://127.0.0.1:8001`** in your browser.
 
 ---
 
-## 🧪 Automated Test Suite (40 passing)
+## 🧪 Automated Test Suite (43 passing)
 
 Run the full pytest suite:
 ```bash
@@ -234,7 +234,7 @@ tests/test_triage.py::test_anaphylaxis_red_flag_detection PASSED
 tests/test_triage.py::test_dka_red_flag_detection PASSED
 tests/test_triage.py::test_routine_presentation_scoring PASSED
 tests/test_triage.py::test_process_triage_turn PASSED
-============================== 40 passed (current suite; timing varies) ==============================
+============================== 43 passed (current suite; timing varies) ==============================
 ```
 
 ---
@@ -250,6 +250,7 @@ Install optional browser-test dependencies with `python -m pip install -r requir
 python -m pytest -q
 python tests/browser_regressions.py http://127.0.0.1:8001
 python tests/browser_smoke.py http://127.0.0.1:8001
+python tests/browser_product.py http://127.0.0.1:8001
 ```
 
 Browser tests create synthetic encounters in the local database. Use a disposable checkout for a clean demonstration database. The legacy `test_e2e_frontend.py` is an opt-in API walkthrough and no longer performs network requests during pytest collection.
