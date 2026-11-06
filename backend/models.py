@@ -53,6 +53,9 @@ class DifferentialDiagnosis(BaseModel):
     condition_name: str
     icd10_code: str
     probability: Literal["High", "Moderate", "Consider", "Rule-Out"]
+    probability_percentage: float = 0.0  # 0 to 100% computed via Bayesian symptom likelihood ratios
+    likelihood_ratio: float = 1.0
+    organ_system: str = "General"
     justification: str
 
 

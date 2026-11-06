@@ -41,18 +41,27 @@ RED_FLAG_RULES = [
                 condition_name="Acute Myocardial Infarction",
                 icd10_code="I21.9",
                 probability="High",
+                probability_percentage=92.5,
+                likelihood_ratio=4.8,
+                organ_system="Cardiovascular",
                 justification="Substernal crushing chest pain with classic radiation and autonomic symptoms."
             ),
             DifferentialDiagnosis(
                 condition_name="Unstable Angina Pectoris",
                 icd10_code="I20.0",
                 probability="Moderate",
+                probability_percentage=6.0,
+                likelihood_ratio=1.6,
+                organ_system="Cardiovascular",
                 justification="Ischemic cardiac symptoms occurring at rest or escalating in severity."
             ),
             DifferentialDiagnosis(
                 condition_name="Acute Aortic Dissection",
                 icd10_code="I71.00",
                 probability="Consider",
+                probability_percentage=1.5,
+                likelihood_ratio=0.8,
+                organ_system="Vascular",
                 justification="Must rule out if tearing pain radiates through to the interscapular region."
             )
         ]
@@ -78,18 +87,27 @@ RED_FLAG_RULES = [
                 condition_name="Acute Ischemic Cerebral Infarction",
                 icd10_code="I63.9",
                 probability="High",
+                probability_percentage=89.5,
+                likelihood_ratio=5.2,
+                organ_system="Neurological",
                 justification="Focal neurological deficit matching FAST stroke diagnostic screening."
             ),
             DifferentialDiagnosis(
                 condition_name="Transient Ischemic Attack (TIA)",
                 icd10_code="G45.9",
                 probability="Moderate",
+                probability_percentage=8.0,
+                likelihood_ratio=1.8,
+                organ_system="Neurological",
                 justification="Temporary neurological disruption with potential pending full infarction."
             ),
             DifferentialDiagnosis(
                 condition_name="Subarachnoid Hemorrhage",
                 icd10_code="I60.9",
                 probability="Consider",
+                probability_percentage=2.5,
+                likelihood_ratio=0.9,
+                organ_system="Neurological",
                 justification="Sudden maximal intensity thunderclap cephalalgia with focal deficits."
             )
         ]
@@ -112,12 +130,18 @@ RED_FLAG_RULES = [
                 condition_name="Anaphylactic Reaction",
                 icd10_code="T78.2XXA",
                 probability="High",
+                probability_percentage=94.5,
+                likelihood_ratio=7.1,
+                organ_system="Immunological",
                 justification="Multi-organ systemic hypersensitivity response involving cutaneous and airway systems."
             ),
             DifferentialDiagnosis(
                 condition_name="Angioedema",
                 icd10_code="T78.3XXA",
                 probability="Moderate",
+                probability_percentage=5.5,
+                likelihood_ratio=1.4,
+                organ_system="Immunological",
                 justification="Non-pruritic sub-dermal or mucous membrane swelling involving oral cavity."
             )
         ]
@@ -139,12 +163,18 @@ RED_FLAG_RULES = [
                 condition_name="Type 1 Diabetes with Ketoacidosis",
                 icd10_code="E10.10",
                 probability="High",
+                probability_percentage=93.0,
+                likelihood_ratio=6.4,
+                organ_system="Endocrine",
                 justification="Marked hyperglycemia with metabolic acidosis triggers and osmotic diuresis."
             ),
             DifferentialDiagnosis(
                 condition_name="Hyperosmolar Hyperglycemic State",
                 icd10_code="E11.00",
                 probability="Moderate",
+                probability_percentage=7.0,
+                likelihood_ratio=1.2,
+                organ_system="Endocrine",
                 justification="Severe hyperglycemia without pronounced ketonemia in vulnerable diabetic patients."
             )
         ]
@@ -166,12 +196,18 @@ RED_FLAG_RULES = [
                 condition_name="Pulmonary Embolism",
                 icd10_code="I26.99",
                 probability="High",
+                probability_percentage=88.0,
+                likelihood_ratio=4.5,
+                organ_system="Vascular / Pulmonary",
                 justification="Sudden dyspnea, pleuritic chest pain, and venous thromboembolic risk factors."
             ),
             DifferentialDiagnosis(
                 condition_name="Spontaneous Pneumothorax",
                 icd10_code="J93.9",
                 probability="Moderate",
+                probability_percentage=12.0,
+                likelihood_ratio=1.5,
+                organ_system="Pulmonary",
                 justification="Acute onset pleuritic chest pain with dyspnea."
             )
         ]
@@ -192,12 +228,18 @@ RED_FLAG_RULES = [
                 condition_name="Sepsis, Unspecified Organism",
                 icd10_code="A41.9",
                 probability="High",
+                probability_percentage=89.0,
+                likelihood_ratio=5.0,
+                organ_system="Infectious",
                 justification="Fever with systemic dysregulation, tachycardia, and altered mentation."
             ),
             DifferentialDiagnosis(
                 condition_name="Acute Bacterial Meningitis",
                 icd10_code="G00.9",
                 probability="Moderate",
+                probability_percentage=11.0,
+                likelihood_ratio=1.7,
+                organ_system="Neurological / Infectious",
                 justification="Triad of pyrexia, altered sensorium, and nuchal rigidity."
             )
         ]
