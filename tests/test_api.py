@@ -136,3 +136,105 @@ def test_list_encounters_endpoint():
     response = client.get("/api/encounters")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+
+def test_heart_calculator_endpoint():
+    payload = {
+        "history_suspicion": 2,
+        "ecg_finding": 2,
+        "age": 66,
+        "risk_factors": 2,
+        "troponin_initial": 2
+    }
+    response = client.post("/api/calculators/heart", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_score"] == 10
+    assert data["risk_category"] == "HIGH RISK"
+
+
+def test_wells_pe_endpoint():
+    payload = {
+        "clinical_signs_dvt": True,
+        "pe_most_likely_diagnosis": True,
+        "heart_rate_over_100": True
+    }
+    response = client.post("/api/calculators/wells-pe", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_score"] == 7.5
+    assert data["pe_probability_two_tier"] == "PE Likely"
+
+
+def test_qsofa_endpoint():
+    payload = {
+        "respiratory_rate": 24,
+        "systolic_bp": 90,
+        "altered_mentation": True
+    }
+    response = client.post("/api/calculators/qsofa", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["score"] == 3
+    assert "SEPSIS" in data["sepsis_risk_category"]
+
+
+def test_gcs_endpoint():
+    payload = {
+        "eye_opening": 4,
+        "verbal_response": 5,
+        "motor_response": 6
+    }
+    response = client.post("/api/calculators/gcs", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_score"] == 15
+
+
+def test_rx_safety_endpoint():
+    payload = {
+        "patient_allergies": ["Penicillin"],
+        "current_medications": ["Lisinopril"],
+        "proposed_medications": ["Amoxicillin"]
+    }
+    response = client.post("/api/safety/rx-check", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["safety_cleared"] is False
+    assert data["critical_count"] >= 1
+
+
+def test_avs_endpoint():
+    payload = {
+        "encounter_id": "ENC-API-AVS-01",
+        "patient_profile": {
+            "name": "David Miller",
+            "age": 50,
+            "biological_sex": "male",
+            "mrn": "MRN-DM-50",
+            "allergies": [],
+            "current_medications": [],
+            "past_medical_history": []
+        },
+        "assessment": {
+            "chief_complaint": "Chest pain",
+            "hpi": {"onset": "1 hour ago", "severity": 8},
+            "esi_level": 1,
+            "triage_status": "ESI-1 RESUSCITATION",
+            "red_flags": [],
+            "differentials": [
+                {
+                    "condition_name": "Acute Myocardial Infarction",
+                    "icd10_code": "I21.9",
+                    "probability": "High",
+                    "justification": "Acute ischemic chest pain"
+                }
+            ],
+            "recommended_disposition": "EMERGENCY ROOM"
+        }
+    }
+    response = client.post("/api/triage/avs", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["patient_name"] == "David Miller"
+    assert "Heart Attack" in data["plain_language_diagnosis"]

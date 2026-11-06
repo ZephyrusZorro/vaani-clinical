@@ -916,3 +916,353 @@ body::after {
   height: 24px;
   display: block;
 }
+
+/* --- Arrhythmia Telemetry Controller Bar --- */
+.ecg-ctrl-bar {
+  background: #04060a;
+  border-top: 1px solid #141c2c;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ecg-rhythm-buttons {
+  display: flex;
+  gap: 4px;
+}
+.rhythm-btn {
+  background: #0c111c;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.rhythm-btn:hover {
+  color: #fff;
+  border-color: var(--neon-cyan);
+}
+.rhythm-btn.active {
+  background: rgba(0, 229, 153, 0.15);
+  border-color: var(--neon-green);
+  color: var(--neon-green);
+  font-weight: 700;
+}
+.rhythm-btn.active.vfib {
+  background: rgba(255, 42, 85, 0.2);
+  border-color: var(--neon-red);
+  color: var(--neon-red);
+  animation: pulse 0.8s infinite;
+}
+.hr-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hr-slider-wrap input[type="range"] {
+  width: 90px;
+  accent-color: var(--neon-green);
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Workspace 4: RX SAFETY & CLINICAL DECISION CALCULATORS
+   ========================================================================== */
+.calculators-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.calc-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.calc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+.calc-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.calc-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--neon-cyan);
+}
+
+.calc-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.calc-row-label {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  display: flex;
+  justify-content: space-between;
+}
+.calc-select, .calc-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+}
+.calc-select:focus, .calc-input:focus {
+  border-color: var(--neon-cyan);
+}
+
+.calc-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.calc-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-main);
+  cursor: pointer;
+}
+.calc-checkbox-label input[type="checkbox"] {
+  accent-color: var(--neon-cyan);
+}
+
+.calc-result-box {
+  background: #090c14;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.calc-score-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+}
+.calc-risk-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.risk-low { background: rgba(0, 229, 153, 0.2); color: var(--neon-green); border: 1px solid var(--neon-green); }
+.risk-mod { background: rgba(255, 183, 0, 0.2); color: var(--neon-amber); border: 1px solid var(--neon-amber); }
+.risk-high { background: rgba(255, 42, 85, 0.2); color: var(--neon-red); border: 1px solid var(--neon-red); box-shadow: var(--glow-red); }
+.calc-explanation {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Rx Safety Section */
+.rx-safety-container {
+  grid-column: 1 / -1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rx-alert-card {
+  padding: 10px 14px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.rx-alert-CRITICAL_AVOID {
+  background: rgba(255, 42, 85, 0.12);
+  border: 1px solid var(--neon-red);
+}
+.rx-alert-HIGH_RISK {
+  background: rgba(255, 183, 0, 0.12);
+  border: 1px solid var(--neon-amber);
+}
+.rx-alert-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   Workspace 5: PATIENT AFTER-VISIT SUMMARY & PRINTABLE CHART
+   ========================================================================== */
+.avs-container {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+}
+.avs-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.avs-content {
+  padding: 24px;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  color: #cbd5e1;
+  overflow-y: auto;
+  max-height: 700px;
+}
+.avs-content h1 {
+  font-size: 20px;
+  color: #fff;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+.avs-content h3 {
+  font-size: 15px;
+  color: var(--neon-cyan);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+.avs-content p, .avs-content li {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+/* Linked Evidence Highlighting */
+.evidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 240, 255, 0.12);
+  color: var(--neon-cyan);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: 6px;
+  transition: all 0.2s;
+}
+.evidence-badge:hover {
+  background: var(--neon-cyan);
+  color: #000;
+}
+
+/* Modal for Hospital Printable Chart */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.active {
+  display: flex;
+}
+.modal-box {
+  background: #0d111a;
+  border: 1px solid var(--border-active);
+  box-shadow: 0 10px 40px rgba(0, 240, 255, 0.2);
+  border-radius: 8px;
+  width: 900px;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-header {
+  background: #07090e;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #fff;
+}
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  font-family: var(--font-sans);
+  color: #cbd5e1;
+  background: #fff;
+  color: #111;
+}
+.modal-footer {
+  background: #07090e;
+  border-top: 1px solid var(--border-subtle);
+  padding: 12px 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* DTMF Dial Pad */
+.dtmf-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 150px;
+}
+.dtmf-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  height: 34px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dtmf-btn:hover {
+  background: var(--neon-cyan);
+  color: #000;
+}
+.dtmf-btn:active {
+  transform: scale(0.92);
+}
+

@@ -22,7 +22,7 @@
       </div>
       <div class="prompt-badge">
         <span class="logo">VAANI<span>.CLINICAL</span></span>
-        <span class="prompt-path">clinician@vaani:~$ /sys/triage/telephony.daemon</span>
+        <span class="prompt-path">clinician@vaani:~$ /sys/triage/telephony.daemon --telemetry-live</span>
       </div>
     </div>
     <div class="dbar-right">
@@ -47,13 +47,27 @@
       <div class="hud-demographics" id="hudDemographics">62 yo • Male • Allergies: Penicillin (Anaphylaxis)</div>
     </div>
 
-    <div class="ecg-container">
+    <div class="ecg-container" style="height: auto;">
       <div class="ecg-overlay-text">
         <span>LEAD II ECG</span>
         <span id="ecgHeartRate">HR: 88 BPM</span>
         <span id="ecgRhythm">SINUS TACHYCARDIA</span>
       </div>
-      <canvas id="ecgCanvas"></canvas>
+      <canvas id="ecgCanvas" style="height: 54px; width: 100%; display: block;"></canvas>
+      <div class="ecg-ctrl-bar">
+        <div class="ecg-rhythm-buttons">
+          <button class="rhythm-btn" data-rhythm="NSR" data-hr="72">NSR 72</button>
+          <button class="rhythm-btn active" data-rhythm="TACHY" data-hr="118">TACHY 118</button>
+          <button class="rhythm-btn" data-rhythm="STEMI" data-hr="94">STEMI 94</button>
+          <button class="rhythm-btn" data-rhythm="AFIB" data-hr="130">AFIB 130</button>
+          <button class="rhythm-btn" data-rhythm="VFIB" data-hr="0">VFIB ARREST</button>
+        </div>
+        <div class="hr-slider-wrap">
+          <span style="color: var(--text-dim); font-size: 10px;">HR:</span>
+          <input type="range" id="hrRangeSlider" min="40" max="180" value="88">
+          <span id="hrSliderVal" style="color: var(--neon-green); font-weight: 700; width: 28px;">88</span>
+        </div>
+      </div>
     </div>
 
     <div class="vitals-quick-hud">
@@ -77,7 +91,7 @@
   </section>
 
   <!-- ========================================================================
-       WORKSPACE TAB NAVIGATION
+       WORKSPACE TAB NAVIGATION (7 WORKSPACES)
        ======================================================================== -->
   <nav class="workspace-tabs">
     <button class="tab-btn active" data-target="workspace-triage">
@@ -89,11 +103,17 @@
     <button class="tab-btn" data-target="workspace-labs">
       <span>🧪</span> [3: BIOMARKER_LAB]
     </button>
+    <button class="tab-btn" data-target="workspace-safety">
+      <span>🛡️</span> [4: RX_SAFETY_&_RISK]
+    </button>
+    <button class="tab-btn" data-target="workspace-avs">
+      <span>📄</span> [5: PATIENT_AVS_CHART]
+    </button>
     <button class="tab-btn" data-target="workspace-fhir">
-      <span>🌐</span> [4: FHIR_EXPLORER]
+      <span>🌐</span> [6: FHIR_EXPLORER]
     </button>
     <button class="tab-btn" data-target="workspace-simulator">
-      <span>⚡</span> [5: CLINICAL_SIMULATOR]
+      <span>⚡</span> [7: CLINICAL_SIMULATOR]
     </button>
   </nav>
 
@@ -116,8 +136,11 @@
               <button class="btn-ctrl" id="ttsToggleBtn">
                 <span id="ttsIcon">🔊</span> <span id="ttsStatus">TTS: ACTIVE</span>
               </button>
-              <button class="btn-ctrl" id="micSimBtn">
-                <span>🎙️</span> SIMULATE VOICE
+              <button class="btn-ctrl" id="liveMicBtn">
+                <span>🎙️</span> <span id="micStatus">LIVE MIC STT</span>
+              </button>
+              <button class="btn-ctrl" id="dtmfToggleBtn">
+                <span>🔢</span> DIAL PAD
               </button>
               <button class="btn-ctrl" id="resetCallBtn">
                 <span>🔄</span> NEW CALL
@@ -148,9 +171,11 @@
             </div>
           </div>
 
-          <!-- Audio Frequency Visualizer Canvas -->
-          <div style="background: #060911; padding: 4px 16px; border-top: 1px solid var(--border-subtle);">
-            <canvas id="audioVisCanvas"></canvas>
+          <!-- Audio Frequency Visualizer Canvas & VU Meter -->
+          <div style="background: #060911; padding: 6px 16px; border-top: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 12px;">
+            <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">SPECTRAL VAD:</span>
+            <canvas id="audioVisCanvas" style="flex: 1; height: 22px;"></canvas>
+            <span id="vuMeterText" style="font-family: var(--font-mono); font-size: 10px; color: var(--neon-cyan);">-48 dB</span>
           </div>
 
           <!-- Chat Input Bar -->
@@ -159,7 +184,7 @@
               type="text" 
               class="chat-input" 
               id="patientInput" 
-              placeholder="Speak or type clinical symptoms (e.g. 'Crushing chest pain radiating to left arm 8/10...')" 
+              placeholder="Speak via microphone or type clinical symptoms (e.g. 'Crushing chest pain radiating to left arm 8/10...')" 
               autocomplete="off"
             >
             <button type="submit" class="btn-send">SEND & TRIAGE</button>
@@ -246,7 +271,7 @@
       </div>
     </section>
 
-    <!-- WORKSPACE 2: SOAP NOTE STUDIO -->
+    <!-- WORKSPACE 2: SOAP NOTE STUDIO (With Linked Evidence Grounding) -->
     <section id="workspace-soap" class="workspace-panel">
       <div class="soap-studio-container">
         
@@ -256,18 +281,30 @@
               ELECTRONIC HEALTH RECORD NOTE (SOAP SYNTHESIS)
             </span>
             <div style="display: flex; gap: 8px;">
+              <button class="btn-ctrl" id="auditGroundingBtn">🔍 AUDIT LINKED EVIDENCE</button>
               <button class="btn-ctrl" id="generateSoapBtn">⚡ RE-SYNTHESIZE SOAP</button>
               <button class="btn-ctrl" id="copySoapBtn">📋 COPY MARKDOWN</button>
             </div>
           </div>
           <div class="soap-rendered" id="soapRenderedContent">
             <p style="color: var(--text-dim); font-style: italic;">
-              No SOAP note generated yet. Conduct a triage conversation in Workspace 1 or load a preset case from Workspace 5, then click Re-synthesize SOAP.
+              No SOAP note generated yet. Conduct a triage conversation in Workspace 1 or load a preset case from Workspace 7, then click Re-synthesize SOAP.
             </p>
           </div>
         </div>
 
         <div class="telemetry-sidebar">
+          <!-- Linked Evidence Audit Panel -->
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>LINKED EVIDENCE AUDIT (ABRIDGE)</span>
+              <span id="evidenceScoreBadge" class="calc-badge">INTEGRITY 100%</span>
+            </div>
+            <div id="evidenceListContainer" style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;">
+              <p style="color: var(--text-dim); font-style: italic;">Generate SOAP note to audit verbatim transcript grounding.</p>
+            </div>
+          </div>
+
           <div class="hud-panel">
             <div class="hud-panel-title">
               <span>SOAP SECTION MAP</span>
@@ -337,7 +374,7 @@
             <tbody id="biomarkerTableBody">
               <tr>
                 <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 24px;">
-                  No biomarkers parsed yet. Paste lab results on the left or load a scenario from Workspace 5.
+                  No biomarkers parsed yet. Paste lab results on the left or load a scenario from Workspace 7.
                 </td>
               </tr>
             </tbody>
@@ -347,7 +384,253 @@
       </div>
     </section>
 
-    <!-- WORKSPACE 4: FHIR EXPLORER -->
+    <!-- WORKSPACE 4: RX SAFETY & CLINICAL DECISION CALCULATORS -->
+    <section id="workspace-safety" class="workspace-panel">
+      <div class="calculators-grid">
+        
+        <!-- HEART Score Calculator Card -->
+        <div class="calc-card">
+          <div class="calc-header">
+            <span class="calc-title">❤️ HEART SCORE (CHEST PAIN / MACE RISK)</span>
+            <span class="calc-badge" id="heartScoreBadge">Score: 0 / 10</span>
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">History Suspicion</span>
+            <select class="calc-select" id="heartHistory">
+              <option value="0">0 — Slightly suspicious</option>
+              <option value="1">1 — Moderately suspicious</option>
+              <option value="2" selected>2 — Highly suspicious (Classic pressure, arm radiation)</option>
+            </select>
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">ECG Finding</span>
+            <select class="calc-select" id="heartECG">
+              <option value="0">0 — Normal</option>
+              <option value="1">1 — Non-specific repolarization abnormality</option>
+              <option value="2" selected>2 — Significant ST deviation / depression</option>
+            </select>
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">Age</span>
+            <input type="number" class="calc-input" id="heartAge" value="62" min="18" max="110">
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">Risk Factors (HTN, Lipids, Smoking, DM, CAD)</span>
+            <select class="calc-select" id="heartRisk">
+              <option value="0">0 — No risk factors</option>
+              <option value="1">1 — 1 or 2 risk factors</option>
+              <option value="2" selected>2 — 3+ risk factors or known atherosclerotic disease</option>
+            </select>
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">Initial Troponin</span>
+            <select class="calc-select" id="heartTrop">
+              <option value="0">0 — Normal limits (&le; 0.04 ng/mL)</option>
+              <option value="1">1 — 1 to 3x normal limit</option>
+              <option value="2" selected>2 — &gt; 3x normal limit (&ge; 0.12 ng/mL)</option>
+            </select>
+          </div>
+          <button class="btn-ctrl" id="calcHeartBtn" style="justify-content: center; color: var(--neon-cyan);">CALCULATE HEART SCORE</button>
+          <div class="calc-result-box" id="heartResultBox">
+            <div class="calc-score-display">
+              <span>Risk Stratification</span>
+              <span class="calc-risk-tag risk-high" id="heartRiskTag">HIGH RISK (Score: 9)</span>
+            </div>
+            <div class="calc-explanation" id="heartExpText">50% - 65% risk of Major Adverse Cardiac Events within 6 weeks. Immediate admission and cardiology consultation indicated.</div>
+          </div>
+        </div>
+
+        <!-- Wells' Criteria for Pulmonary Embolism -->
+        <div class="calc-card">
+          <div class="calc-header">
+            <span class="calc-title">🫁 WELLS' CRITERIA (PULMONARY EMBOLISM)</span>
+            <span class="calc-badge" id="wellsScoreBadge">Score: 0.0</span>
+          </div>
+          <div class="calc-checkbox-group">
+            <label class="calc-checkbox-label">
+              <input type="checkbox" id="wellsDVT"> Clinical signs/symptoms of DVT (+3.0)
+            </label>
+            <label class="calc-checkbox-label">
+              <input type="checkbox" id="wellsPEAlt"> PE is #1 diagnosis or equally likely (+3.0)
+            </label>
+            <label class="calc-checkbox-label">
+              <input type="checkbox" id="wellsHR"> Heart rate &gt; 100 beats/min (+1.5)
+            </label>
+            <label class="calc-checkbox-label">
+              <input type="checkbox" id="wellsImmob"> Immobilization &ge;3 days or surgery in 4 weeks (+1.5)
+            </label>
+            <label class="calc-checkbox-label">
+              <input type="checkbox" id="wellsPrior"> Previous DVT or PE (+1.5)
+            </label>
+            <label class="calc-checkbox-label">
+              <input type="checkbox" id="wellsHemo"> Hemoptysis (coughing blood) (+1.0)
+            </label>
+            <label class="calc-checkbox-label">
+              <input type="checkbox" id="wellsMalign"> Active malignancy / cancer (+1.0)
+            </label>
+          </div>
+          <button class="btn-ctrl" id="calcWellsBtn" style="justify-content: center; color: var(--neon-cyan);">CALCULATE WELLS PE SCORE</button>
+          <div class="calc-result-box" id="wellsResultBox">
+            <div class="calc-score-display">
+              <span>PE Probability</span>
+              <span class="calc-risk-tag risk-low" id="wellsRiskTag">PE Unlikely</span>
+            </div>
+            <div class="calc-explanation" id="wellsExpText">Order high-sensitivity D-Dimer assay. If negative, PE safely ruled out.</div>
+          </div>
+        </div>
+
+        <!-- qSOFA & GCS Combined Card -->
+        <div class="calc-card">
+          <div class="calc-header">
+            <span class="calc-title">⚡ qSOFA (SEPSIS ORGAN FAILURE)</span>
+            <span class="calc-badge" id="qsofaBadge">Score: 0 / 3</span>
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">Respiratory Rate (breaths/min)</span>
+            <input type="number" class="calc-input" id="qsofaRR" value="22" min="8" max="60">
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">Systolic Blood Pressure (mmHg)</span>
+            <input type="number" class="calc-input" id="qsofaSBP" value="95" min="40" max="260">
+          </div>
+          <div class="calc-row">
+            <label class="calc-checkbox-label" style="margin-top: 4px;">
+              <input type="checkbox" id="qsofaGCS" checked> Altered Mentation (GCS &lt; 15 or acute confusion)
+            </label>
+          </div>
+          <button class="btn-ctrl" id="calcQsofaBtn" style="justify-content: center; color: var(--neon-cyan);">CALCULATE qSOFA</button>
+          <div class="calc-result-box" id="qsofaResultBox">
+            <div class="calc-score-display">
+              <span>Sepsis Acuity</span>
+              <span class="calc-risk-tag risk-high" id="qsofaRiskTag">HIGH RISK (Score: 3)</span>
+            </div>
+            <div class="calc-explanation" id="qsofaExpText">&gt;10% in-hospital mortality. Immediate blood cultures x2, broad-spectrum antibiotics, IV fluid resuscitation.</div>
+          </div>
+        </div>
+
+        <!-- GCS Coma Scale Card -->
+        <div class="calc-card">
+          <div class="calc-header">
+            <span class="calc-title">🧠 GLASGOW COMA SCALE (GCS)</span>
+            <span class="calc-badge" id="gcsBadge">Score: 15 / 15</span>
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">Eye Opening (1-4)</span>
+            <select class="calc-select" id="gcsEye">
+              <option value="4" selected>4 — Spontaneous</option>
+              <option value="3">3 — To speech</option>
+              <option value="2">2 — To pain</option>
+              <option value="1">1 — None</option>
+            </select>
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">Verbal Response (1-5)</span>
+            <select class="calc-select" id="gcsVerbal">
+              <option value="5" selected>5 — Oriented</option>
+              <option value="4">4 — Confused</option>
+              <option value="3">3 — Inappropriate words</option>
+              <option value="2">2 — Incomprehensible sounds</option>
+              <option value="1">1 — None</option>
+            </select>
+          </div>
+          <div class="calc-row">
+            <span class="calc-row-label">Motor Response (1-6)</span>
+            <select class="calc-select" id="gcsMotor">
+              <option value="6" selected>6 — Obeys commands</option>
+              <option value="5">5 — Localizes pain</option>
+              <option value="4">4 — Flexion withdrawal</option>
+              <option value="3">3 — Decorticate flexion</option>
+              <option value="2">2 — Decerebrate extension</option>
+              <option value="1">1 — None</option>
+            </select>
+          </div>
+          <button class="btn-ctrl" id="calcGcsBtn" style="justify-content: center; color: var(--neon-cyan);">CALCULATE GCS</button>
+          <div class="calc-result-box" id="gcsResultBox">
+            <div class="calc-score-display">
+              <span>Neurological Rating</span>
+              <span class="calc-risk-tag risk-low" id="gcsRiskTag">Mild / Preserved (15/15)</span>
+            </div>
+            <div class="calc-explanation" id="gcsExpText">Normal consciousness. Intact airway protective reflexes.</div>
+          </div>
+        </div>
+
+        <!-- Full-Width Rx Safety & Drug Allergy Interaction Checker -->
+        <div class="rx-safety-container">
+          <div class="calc-header">
+            <span class="calc-title">🛡️ RX SAFETY & ALLERGY-DRUG CROSS-REACTIVITY GUARDRAIL</span>
+            <button class="btn-ctrl" id="runRxCheckBtn">⚡ TEST DRUG SAFETY</button>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted);">
+            Cross-checks planned triage pharmacotherapy against patient allergies (Penicillins, Cephalosporins, Sulfas, Aspirin/NSAIDs, Opioids) and active medications to prevent fatal anaphylaxis or hemorrhage.
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <span class="calc-row-label">Patient Allergies (Comma separated)</span>
+              <input type="text" class="calc-input" id="rxAllergiesInput" value="Penicillin (Anaphylaxis), Aspirin" style="width: 100%;">
+            </div>
+            <div>
+              <span class="calc-row-label">Proposed Medications to Administer (Comma separated)</span>
+              <input type="text" class="calc-input" id="rxProposedInput" value="Chewable Aspirin 325mg, Cephalexin 500mg, Amoxicillin 875mg" style="width: 100%;">
+            </div>
+          </div>
+          <div id="rxAlertsList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+            <!-- Rx alerts injected here -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- WORKSPACE 5: PATIENT AFTER-VISIT SUMMARY & PRINTABLE CHART -->
+    <section id="workspace-avs" class="workspace-panel">
+      <div class="avs-container">
+        
+        <div class="avs-card">
+          <div class="soap-toolbar">
+            <span style="font-family: var(--font-mono); font-size: 13px; color: #fff;">
+              PATIENT AFTER-VISIT SUMMARY (AVS) — 6TH GRADE COMPASSIONATE LANGUAGE
+            </span>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-ctrl" id="generateAvsBtn">⚡ RE-GENERATE AVS</button>
+              <button class="btn-ctrl" id="openPrintChartBtn">🖨️ HOSPITAL PRINT/PDF CHART</button>
+            </div>
+          </div>
+          <div class="avs-content" id="avsRenderedContent">
+            <p style="color: var(--text-dim); font-style: italic;">
+              Conduct a triage encounter in Workspace 1 or load a scenario from Workspace 7, then click "Re-generate AVS".
+            </p>
+          </div>
+        </div>
+
+        <div class="telemetry-sidebar">
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>AVS SUMMARY MATRIX</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px; line-height: 1.4;">
+              <div><strong style="color: var(--neon-cyan);">Plain Diagnosis:</strong> Translated from ICD-10 medical terminology into plain patient language.</div>
+              <div><strong style="color: var(--neon-red);">Danger Signs:</strong> Clear bullet points of when to call 911 immediately.</div>
+              <div><strong style="color: var(--neon-green);">Medication Instructions:</strong> Safe guidance avoiding home medication delay.</div>
+              <div><strong style="color: var(--neon-amber);">Verification Code:</strong> Secure triage encounter token for ER intake desk.</div>
+            </div>
+          </div>
+
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>HEALTH LITERACY STANDARD</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.5;">
+              Reading Level: Grade 6.2 (Flesch-Kincaid)<br>
+              AHA / ACC Emergency Guideline Compliant<br>
+              Multi-Language Translation: English / Hindi (वाणी)
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- WORKSPACE 6: FHIR EXPLORER -->
     <section id="workspace-fhir" class="workspace-panel">
       <div class="fhir-container">
         <div class="soap-toolbar">
@@ -363,7 +646,7 @@
       </div>
     </section>
 
-    <!-- WORKSPACE 5: CLINICAL SIMULATOR -->
+    <!-- WORKSPACE 7: CLINICAL SIMULATOR -->
     <section id="workspace-simulator" class="workspace-panel">
       <div style="margin-bottom: 20px;">
         <h2 style="font-size: 18px; color: #fff; margin-bottom: 6px;">Preset Clinical Telephony Scenarios</h2>
@@ -378,6 +661,55 @@
     </section>
 
   </main>
+
+  <!-- ========================================================================
+       MODAL: HOSPITAL PRINTABLE ENCOUNTER CHART (EPIC/CERNER STYLE)
+       ======================================================================== -->
+  <div class="modal-overlay" id="chartModalOverlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>HOSPITAL ENCOUNTER RECORD & CLINICAL TRIAGE CHART</span>
+        <button class="btn-ctrl" id="closeModalBtn" style="color: var(--neon-red);">✕ CLOSE</button>
+      </div>
+      <div class="modal-body" id="printableChartBody">
+        <!-- Rendered hospital document -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ctrl" id="printModalBtn" style="color: #fff; background: var(--border-subtle);">🖨️ PRINT RECORD</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: TELEPHONY DTMF DIAL PAD
+       ======================================================================== -->
+  <div class="modal-overlay" id="dtmfModalOverlay">
+    <div class="modal-box" style="width: 280px;">
+      <div class="modal-header">
+        <span>TELEPHONY DIAL PAD</span>
+        <button class="btn-ctrl" id="closeDtmfBtn" style="color: var(--neon-red);">✕</button>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px;">
+        <div id="dtmfNumberDisplay" style="font-family: var(--font-mono); font-size: 20px; color: var(--neon-cyan); letter-spacing: 3px; min-height: 28px;">
+          911
+        </div>
+        <div class="dtmf-pad">
+          <button class="dtmf-btn" data-key="1">1</button>
+          <button class="dtmf-btn" data-key="2">2</button>
+          <button class="dtmf-btn" data-key="3">3</button>
+          <button class="dtmf-btn" data-key="4">4</button>
+          <button class="dtmf-btn" data-key="5">5</button>
+          <button class="dtmf-btn" data-key="6">6</button>
+          <button class="dtmf-btn" data-key="7">7</button>
+          <button class="dtmf-btn" data-key="8">8</button>
+          <button class="dtmf-btn" data-key="9">9</button>
+          <button class="dtmf-btn" data-key="*">*</button>
+          <button class="dtmf-btn" data-key="0">0</button>
+          <button class="dtmf-btn" data-key="#">#</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="js/app.js"></script>
 </body>

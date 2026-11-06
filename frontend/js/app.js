@@ -1,7 +1,8 @@
 /**
  * Vaani Clinical (वाणी) — Telemetry & Triage Workstation Application
- * Real-time Clinical Telephony, OLD CARTS HPI reasoning, ECG cardiac waveform,
- * LOINC lab biomarker extraction, SOAP note synthesis, and HL7 FHIR v4 bundles.
+ * Real-time Clinical Telephony, OLD CARTS HPI reasoning, Arrhythmia ECG canvas,
+ * LOINC lab biomarker extraction, SOAP note synthesis, HL7 FHIR v4 bundles,
+ * HEART / Wells / qSOFA / GCS calculators, RxNorm drug safety, and Linked Evidence grounding.
  */
 
 // Application State
@@ -12,7 +13,7 @@ const state = {
     age: 62,
     biological_sex: "male",
     mrn: "MRN-CV-88219",
-    allergies: ["Penicillin (anaphylaxis)"],
+    allergies: ["Penicillin (anaphylaxis)", "Aspirin"],
     current_medications: ["Atorvastatin 40mg", "Metoprolol 50mg", "Lisinopril 10mg"],
     past_medical_history: ["Hypertension", "Hyperlipidemia", "Tobacco use (30 pack-years)"]
   },
@@ -22,7 +23,17 @@ const state = {
   extractedBiomarkers: [],
   ttsActive: true,
   lastSoapNote: null,
-  lastFhirBundle: null
+  lastFhirBundle: null,
+  lastAvs: null,
+  // ECG & Arrhythmia simulation
+  currentRhythm: "TACHY",
+  heartRate: 118,
+  // Audio & Speech recognition
+  isLiveMicActive: false,
+  speechRecognizer: null,
+  audioContext: null,
+  analyserNode: null,
+  micStream: null
 };
 
 // DOM Elements
@@ -38,7 +49,9 @@ const el = {
   ttsToggleBtn: document.getElementById("ttsToggleBtn"),
   ttsIcon: document.getElementById("ttsIcon"),
   ttsStatus: document.getElementById("ttsStatus"),
-  micSimBtn: document.getElementById("micSimBtn"),
+  liveMicBtn: document.getElementById("liveMicBtn"),
+  micStatus: document.getElementById("micStatus"),
+  dtmfToggleBtn: document.getElementById("dtmfToggleBtn"),
   resetCallBtn: document.getElementById("resetCallBtn"),
   emergencyBanner: document.getElementById("emergencyBanner"),
   emergencyTitle: document.getElementById("emergencyTitle"),
@@ -60,22 +73,51 @@ const el = {
   // SOAP Studio
   generateSoapBtn: document.getElementById("generateSoapBtn"),
   copySoapBtn: document.getElementById("copySoapBtn"),
+  auditGroundingBtn: document.getElementById("auditGroundingBtn"),
   soapRenderedContent: document.getElementById("soapRenderedContent"),
+  evidenceListContainer: document.getElementById("evidenceListContainer"),
+  evidenceScoreBadge: document.getElementById("evidenceScoreBadge"),
   // Biomarkers Lab
   labInputText: document.getElementById("labInputText"),
   pasteSampleLabBtn: document.getElementById("pasteSampleLabBtn"),
   extractLabBtn: document.getElementById("extractLabBtn"),
   biomarkerTableBody: document.getElementById("biomarkerTableBody"),
   bioOrganAlertCount: document.getElementById("bioOrganAlertCount"),
+  // Calculators & Rx Safety
+  calcHeartBtn: document.getElementById("calcHeartBtn"),
+  calcWellsBtn: document.getElementById("calcWellsBtn"),
+  calcQsofaBtn: document.getElementById("calcQsofaBtn"),
+  calcGcsBtn: document.getElementById("calcGcsBtn"),
+  runRxCheckBtn: document.getElementById("runRxCheckBtn"),
+  rxAllergiesInput: document.getElementById("rxAllergiesInput"),
+  rxProposedInput: document.getElementById("rxProposedInput"),
+  rxAlertsList: document.getElementById("rxAlertsList"),
+  // AVS & Printable Chart
+  generateAvsBtn: document.getElementById("generateAvsBtn"),
+  openPrintChartBtn: document.getElementById("openPrintChartBtn"),
+  avsRenderedContent: document.getElementById("avsRenderedContent"),
+  chartModalOverlay: document.getElementById("chartModalOverlay"),
+  closeModalBtn: document.getElementById("closeModalBtn"),
+  printModalBtn: document.getElementById("printModalBtn"),
+  printableChartBody: document.getElementById("printableChartBody"),
+  // DTMF Modal
+  dtmfModalOverlay: document.getElementById("dtmfModalOverlay"),
+  closeDtmfBtn: document.getElementById("closeDtmfBtn"),
+  dtmfNumberDisplay: document.getElementById("dtmfNumberDisplay"),
   // FHIR Explorer
   generateFhirBtn: document.getElementById("generateFhirBtn"),
   downloadFhirBtn: document.getElementById("downloadFhirBtn"),
   fhirCodeView: document.getElementById("fhirCodeView"),
   // Clinical Simulator
   scenariosGrid: document.getElementById("scenariosGrid"),
-  // Canvases
+  // Canvases & Telemetry Controls
   ecgCanvas: document.getElementById("ecgCanvas"),
-  audioVisCanvas: document.getElementById("audioVisCanvas")
+  audioVisCanvas: document.getElementById("audioVisCanvas"),
+  vuMeterText: document.getElementById("vuMeterText"),
+  ecgHeartRate: document.getElementById("ecgHeartRate"),
+  ecgRhythm: document.getElementById("ecgRhythm"),
+  hrRangeSlider: document.getElementById("hrRangeSlider"),
+  hrSliderVal: document.getElementById("hrSliderVal")
 };
 
 
@@ -85,9 +127,18 @@ window.addEventListener("DOMContentLoaded", () => {
   initTabNavigation();
   initECGMonitor();
   initAudioVisualizer();
+  initTelephonySound();
+  initSpeechRecognition();
   initEventHandlers();
   loadPresetScenarios();
   updatePatientHUD();
+
+  // Run initial calculator & safety checks
+  runHeartScoreCalculation();
+  runWellsPECalculation();
+  runQsofaCalculation();
+  runGcsCalculation();
+  runRxSafetyCheck();
 });
 
 
@@ -137,10 +188,11 @@ function updatePatientHUD() {
     ? `Allergies: ${state.patientProfile.allergies.join(', ')}`
     : 'No known drug allergies';
   if (el.hudDemographics) el.hudDemographics.textContent = `${ageSex} • ${allergies}`;
+  if (el.rxAllergiesInput) el.rxAllergiesInput.value = state.patientProfile.allergies.join(", ");
 }
 
 
-// --- REAL-TIME ECG CARDIAC WAVEFORM MONITOR ---
+// --- ARRHYTHMIA & ECG CARDIAC WAVEFORM MONITOR ---
 function initECGMonitor() {
   const canvas = el.ecgCanvas;
   if (!canvas) return;
@@ -148,42 +200,99 @@ function initECGMonitor() {
 
   function resizeCanvas() {
     canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = canvas.parentElement.clientHeight;
+    canvas.height = 54;
   }
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
 
   let x = 0;
   let prevY = canvas.height / 2;
-  let heartRate = 88;
   let cycle = 0;
+  let afibNoisePhase = 0;
 
-  function getEcgY(t) {
+  // Rhythm selector event buttons
+  document.querySelectorAll(".rhythm-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".rhythm-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const r = btn.getAttribute("data-rhythm");
+      const hr = parseInt(btn.getAttribute("data-hr"), 10);
+      state.currentRhythm = r;
+      state.heartRate = hr;
+
+      el.ecgRhythm.textContent = btn.textContent;
+      el.ecgHeartRate.textContent = hr > 0 ? `HR: ${hr} BPM` : "NO PULSE (ARREST)";
+      el.hrRangeSlider.value = hr > 0 ? hr : 40;
+      el.hrSliderVal.textContent = hr > 0 ? hr : "0";
+    });
+  });
+
+  // HR Slider
+  el.hrRangeSlider.addEventListener("input", (e) => {
+    const val = parseInt(e.target.value, 10);
+    state.heartRate = val;
+    el.hrSliderVal.textContent = val;
+    el.ecgHeartRate.textContent = `HR: ${val} BPM`;
+  });
+
+  function getEcgY(t, rhythm) {
     const baseline = canvas.height / 2;
-    const normT = (t % 100) / 100; // 0 to 1 cycle
 
-    // P-Q-R-S-T wave model
-    if (normT > 0.15 && normT < 0.22) {
-      // P wave
-      return baseline - Math.sin((normT - 0.15) / 0.07 * Math.PI) * 4;
-    } else if (normT >= 0.28 && normT < 0.30) {
-      // Q dip
-      return baseline + 3;
-    } else if (normT >= 0.30 && normT < 0.34) {
-      // R spike
-      return baseline - 24;
-    } else if (normT >= 0.34 && normT < 0.37) {
-      // S dip
-      return baseline + 7;
-    } else if (normT > 0.48 && normT < 0.62) {
-      // T wave
-      return baseline - Math.sin((normT - 0.48) / 0.14 * Math.PI) * 6;
+    if (rhythm === "VFIB") {
+      // Coarse Ventricular Fibrillation: chaotic sinusoidal arrest pattern
+      return baseline + Math.sin(t * 0.12) * 14 + Math.sin(t * 0.28) * 8 + (Math.random() - 0.5) * 6;
     }
-    return baseline + (Math.random() - 0.5) * 1.2; // subtle noise
+
+    const normT = (t % 100) / 100; // 0.0 to 1.0
+
+    if (rhythm === "STEMI") {
+      // Marked ST segment elevation (tombstone ST elevation)
+      if (normT > 0.15 && normT < 0.22) {
+        return baseline - Math.sin((normT - 0.15) / 0.07 * Math.PI) * 4; // P wave
+      } else if (normT >= 0.28 && normT < 0.30) {
+        return baseline + 3; // Q
+      } else if (normT >= 0.30 && normT < 0.34) {
+        return baseline - 24; // R spike
+      } else if (normT >= 0.34 && normT < 0.37) {
+        return baseline - 8; // Elevated ST takeoff
+      } else if (normT >= 0.37 && normT < 0.65) {
+        // High ST plateau + peaked T wave
+        return baseline - 12 - Math.sin((normT - 0.37) / 0.28 * Math.PI) * 7;
+      }
+      return baseline;
+    }
+
+    if (rhythm === "AFIB") {
+      // Atrial Fibrillation: No P waves, irregular baseline, random R spike intervals
+      afibNoisePhase += 0.2;
+      const fWaveNoise = Math.sin(afibNoisePhase * 3.4) * 2.2 + (Math.random() - 0.5) * 2.5;
+      if (normT >= 0.30 && normT < 0.34) {
+        return baseline - 22; // R spike
+      } else if (normT >= 0.34 && normT < 0.37) {
+        return baseline + 6; // S
+      } else if (normT > 0.48 && normT < 0.62) {
+        return baseline - Math.sin((normT - 0.48) / 0.14 * Math.PI) * 4 + fWaveNoise;
+      }
+      return baseline + fWaveNoise;
+    }
+
+    // Normal Sinus Rhythm (NSR) & Sinus Tachycardia (TACHY)
+    if (normT > 0.15 && normT < 0.22) {
+      return baseline - Math.sin((normT - 0.15) / 0.07 * Math.PI) * 4; // P wave
+    } else if (normT >= 0.28 && normT < 0.30) {
+      return baseline + 3; // Q
+    } else if (normT >= 0.30 && normT < 0.34) {
+      return baseline - 24; // R spike
+    } else if (normT >= 0.34 && normT < 0.37) {
+      return baseline + 7; // S
+    } else if (normT > 0.48 && normT < 0.62) {
+      return baseline - Math.sin((normT - 0.48) / 0.14 * Math.PI) * 6; // T wave
+    }
+
+    return baseline + (Math.random() - 0.5) * 1.0;
   }
 
   function drawECG() {
-    // Clear sweep beam
     ctx.fillStyle = "rgba(4, 6, 9, 0.08)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -197,23 +306,26 @@ function initECGMonitor() {
     }
     ctx.stroke();
 
-    const speed = 2.2;
-    const y = getEcgY(cycle);
+    const speed = 2.4;
+    const y = getEcgY(cycle, state.currentRhythm);
 
-    // Green ECG trace with neon glow
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = "#00e599";
-    ctx.strokeStyle = "#00ffaa";
+    const isArrest = state.currentRhythm === "VFIB";
+    ctx.shadowBlur = isArrest ? 12 : 8;
+    ctx.shadowColor = isArrest ? "#ff2a55" : "#00e599";
+    ctx.strokeStyle = isArrest ? "#ff3366" : "#00ffaa";
     ctx.lineWidth = 1.8;
+
     ctx.beginPath();
     ctx.moveTo(x, prevY);
     ctx.lineTo(x + speed, y);
     ctx.stroke();
 
-    ctx.shadowBlur = 0; // reset shadow
+    ctx.shadowBlur = 0;
     prevY = y;
     x += speed;
-    cycle += 1.3;
+
+    const rateFactor = Math.max(0.4, (state.heartRate || 75) / 75);
+    cycle += 1.3 * rateFactor;
 
     if (x >= canvas.width) {
       x = 0;
@@ -227,7 +339,171 @@ function initECGMonitor() {
 }
 
 
-// --- AUDIO FREQUENCY VISUALIZER ---
+// --- WEB AUDIO TELEPHONY & DTMF DUAL-TONE SYNTHESIZER ---
+let webAudioCtx = null;
+function getAudioContext() {
+  if (!webAudioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      webAudioCtx = new AudioContextClass();
+    }
+  }
+  if (webAudioCtx && webAudioCtx.state === "suspended") {
+    webAudioCtx.resume();
+  }
+  return webAudioCtx;
+}
+
+// DTMF Frequency Map
+const DTMF_FREQS = {
+  "1": [697, 1209], "2": [697, 1336], "3": [697, 1477],
+  "4": [770, 1209], "5": [770, 1336], "6": [770, 1477],
+  "7": [852, 1209], "8": [852, 1336], "9": [852, 1477],
+  "*": [941, 1209], "0": [941, 1336], "#": [941, 1477]
+};
+
+function playDTMFTone(key) {
+  const actx = getAudioContext();
+  if (!actx || !DTMF_FREQS[key]) return;
+
+  const [f1, f2] = DTMF_FREQS[key];
+  const osc1 = actx.createOscillator();
+  const osc2 = actx.createOscillator();
+  const gain = actx.createGain();
+
+  osc1.frequency.value = f1;
+  osc2.frequency.value = f2;
+  gain.gain.setValueAtTime(0.12, actx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.18);
+
+  osc1.connect(gain);
+  osc2.connect(gain);
+  gain.connect(actx.destination);
+
+  osc1.start();
+  osc2.start();
+  osc1.stop(actx.currentTime + 0.18);
+  osc2.stop(actx.currentTime + 0.18);
+}
+
+function initTelephonySound() {
+  // DTMF buttons
+  document.querySelectorAll(".dtmf-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-key");
+      playDTMFTone(key);
+      if (el.dtmfNumberDisplay) {
+        el.dtmfNumberDisplay.textContent += key;
+      }
+    });
+  });
+
+  if (el.dtmfToggleBtn) {
+    el.dtmfToggleBtn.addEventListener("click", () => {
+      el.dtmfNumberDisplay.textContent = "";
+      el.dtmfModalOverlay.classList.add("active");
+    });
+  }
+  if (el.closeDtmfBtn) {
+    el.closeDtmfBtn.addEventListener("click", () => {
+      el.dtmfModalOverlay.classList.remove("active");
+    });
+  }
+}
+
+
+// --- LIVE SPEECH RECOGNITION (WEB SPEECH API) ---
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    if (el.micStatus) el.micStatus.textContent = "MIC (NO BROWSER STT)";
+    return;
+  }
+
+  const recognizer = new SpeechRecognition();
+  recognizer.continuous = true;
+  recognizer.interimResults = true;
+  recognizer.lang = "en-US";
+
+  recognizer.onstart = () => {
+    state.isLiveMicActive = true;
+    el.liveMicBtn.classList.add("active-mic");
+    el.micStatus.textContent = "LISTENING LIVE...";
+    startRealMicAnalyser();
+  };
+
+  recognizer.onresult = (event) => {
+    let finalTranscript = "";
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      }
+    }
+    if (finalTranscript.trim()) {
+      el.patientInput.value = finalTranscript.trim();
+      sendPatientMessage(finalTranscript.trim());
+    }
+  };
+
+  recognizer.onerror = (e) => {
+    console.warn("Speech recognition error:", e.error);
+    stopLiveMic();
+  };
+
+  recognizer.onend = () => {
+    if (state.isLiveMicActive) {
+      try { recognizer.start(); } catch (_) {}
+    } else {
+      stopLiveMic();
+    }
+  };
+
+  state.speechRecognizer = recognizer;
+
+  el.liveMicBtn.addEventListener("click", () => {
+    if (state.isLiveMicActive) {
+      state.isLiveMicActive = false;
+      recognizer.stop();
+      stopLiveMic();
+    } else {
+      try {
+        recognizer.start();
+      } catch (err) {
+        console.error("Mic start failed:", err);
+      }
+    }
+  });
+}
+
+function stopLiveMic() {
+  state.isLiveMicActive = false;
+  el.liveMicBtn.classList.remove("active-mic");
+  el.micStatus.textContent = "LIVE MIC STT";
+  if (state.micStream) {
+    state.micStream.getTracks().forEach(t => t.stop());
+    state.micStream = null;
+  }
+}
+
+async function startRealMicAnalyser() {
+  try {
+    const actx = getAudioContext();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    state.micStream = stream;
+
+    const source = actx.createMediaStreamSource(stream);
+    const analyser = actx.createAnalyser();
+    analyser.fftSize = 64;
+    source.connect(analyser);
+    state.analyserNode = analyser;
+  } catch (err) {
+    console.warn("Could not capture live microphone audio stream for VU meter:", err);
+  }
+}
+
+
+// --- AUDIO FREQUENCY VISUALIZER & VU METER ---
 let audioActive = false;
 function initAudioVisualizer() {
   const canvas = el.audioVisCanvas;
@@ -235,27 +511,48 @@ function initAudioVisualizer() {
   const ctx = canvas.getContext("2d");
 
   function resize() {
-    canvas.width = canvas.parentElement.clientWidth - 32;
-    canvas.height = 24;
+    canvas.width = canvas.parentElement.clientWidth - 140;
+    canvas.height = 22;
   }
   resize();
   window.addEventListener("resize", resize);
 
-  const numBars = 48;
+  const numBars = 36;
   const barWidth = 3;
+  const freqData = new Uint8Array(32);
 
   function renderBars() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const spacing = canvas.width / numBars;
 
-    for (let i = 0; i < numBars; i++) {
-      let height = 3;
-      if (audioActive) {
-        height = 3 + Math.sin(Date.now() * 0.015 + i * 0.4) * 8 + Math.random() * 8;
+    let dbVal = -48;
+
+    if (state.analyserNode && state.isLiveMicActive) {
+      state.analyserNode.getByteFrequencyData(freqData);
+      let sum = 0;
+      for (let i = 0; i < freqData.length; i++) sum += freqData[i];
+      const avg = sum / freqData.length;
+      dbVal = Math.round(-48 + (avg / 255) * 44);
+
+      for (let i = 0; i < numBars; i++) {
+        const val = freqData[i % freqData.length] / 255;
+        const height = Math.max(3, val * 18);
+        ctx.fillStyle = val > 0.6 ? "#ff2a55" : (val > 0.3 ? "#00f0ff" : "#00e599");
+        ctx.fillRect(i * spacing, (canvas.height - height) / 2, barWidth, height);
       }
-      ctx.fillStyle = audioActive ? "#00f0ff" : "#1a2234";
-      ctx.fillRect(i * spacing, (canvas.height - height) / 2, barWidth, height);
+    } else {
+      for (let i = 0; i < numBars; i++) {
+        let height = 3;
+        if (audioActive) {
+          height = 3 + Math.sin(Date.now() * 0.015 + i * 0.4) * 7 + Math.random() * 6;
+          dbVal = Math.round(-24 + Math.random() * 12);
+        }
+        ctx.fillStyle = audioActive ? "#00f0ff" : "#1a2234";
+        ctx.fillRect(i * spacing, (canvas.height - height) / 2, barWidth, height);
+      }
     }
+
+    if (el.vuMeterText) el.vuMeterText.textContent = `${dbVal} dB`;
     requestAnimationFrame(renderBars);
   }
   renderBars();
@@ -278,7 +575,6 @@ function speakText(text) {
     utterance.rate = 1.05;
     utterance.pitch = 1.0;
     
-    // Pick clear English voice if available
     const voices = window.speechSynthesis.getVoices();
     const preferredVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("Samantha")));
     if (preferredVoice) utterance.voice = preferredVoice;
@@ -313,19 +609,6 @@ function initEventHandlers() {
     if (!text) return;
     el.patientInput.value = "";
     sendPatientMessage(text);
-  });
-
-  // Simulate Mic voice prompt
-  el.micSimBtn.addEventListener("click", () => {
-    const prompts = [
-      "I feel terrible crushing pressure in the middle of my chest radiating to my jaw, rated 8 out of 10.",
-      "My speech is slurred and my right arm feels like dead weight since 30 minutes ago.",
-      "I have type 1 diabetes and my blood sugar is over 500, with constant vomiting and fruity breath.",
-      "I have a mild runny nose and slight scratchy throat since yesterday, no fever."
-    ];
-    const picked = prompts[Math.floor(Math.random() * prompts.length)];
-    el.patientInput.value = picked;
-    el.patientInput.focus();
   });
 
   // Reset call button
@@ -365,6 +648,7 @@ function initEventHandlers() {
       alert("Please synthesize a SOAP note first.");
     }
   });
+  el.auditGroundingBtn.addEventListener("click", auditLinkedEvidence);
 
   // Biomarker Lab buttons
   el.pasteSampleLabBtn.addEventListener("click", () => {
@@ -391,6 +675,19 @@ White Blood Cell: 12.8 x10^3/uL`;
     extractBiomarkersFromText(raw);
   });
 
+  // Calculators & Rx Safety
+  el.calcHeartBtn.addEventListener("click", runHeartScoreCalculation);
+  el.calcWellsBtn.addEventListener("click", runWellsPECalculation);
+  el.calcQsofaBtn.addEventListener("click", runQsofaCalculation);
+  el.calcGcsBtn.addEventListener("click", runGcsCalculation);
+  el.runRxCheckBtn.addEventListener("click", runRxSafetyCheck);
+
+  // AVS & Printable Chart
+  el.generateAvsBtn.addEventListener("click", generatePatientAVS);
+  el.openPrintChartBtn.addEventListener("click", openPrintableChartModal);
+  el.closeModalBtn.addEventListener("click", () => el.chartModalOverlay.classList.remove("active"));
+  el.printModalBtn.addEventListener("click", () => window.print());
+
   // FHIR Explorer buttons
   el.generateFhirBtn.addEventListener("click", compileFHIRBundle);
   el.downloadFhirBtn.addEventListener("click", () => {
@@ -411,7 +708,6 @@ White Blood Cell: 12.8 x10^3/uL`;
 
 // --- SEND PATIENT MESSAGE TO BACKEND API ---
 async function sendPatientMessage(text) {
-  // Append patient bubble
   appendChatBubble("patient", text);
   pulseAudioVis(1200);
 
@@ -429,13 +725,9 @@ async function sendPatientMessage(text) {
     if (!response.ok) throw new Error("API error: " + response.statusText);
     const data = await response.json();
 
-    // Append agent bubble with audio badge
     appendChatBubble("agent", data.agent_reply, data.agent_speech_text);
-
-    // Speak audio text
     speakText(data.agent_speech_text);
 
-    // Update state & UI
     state.latestAssessment = data.triage_assessment;
     state.currentHPI = data.triage_assessment.hpi;
     if (data.extracted_biomarkers) state.extractedBiomarkers = data.extracted_biomarkers;
@@ -453,6 +745,7 @@ async function sendPatientMessage(text) {
 function appendChatBubble(role, content, speechText = null) {
   const row = document.createElement("div");
   row.className = `msg-row ${role}`;
+  row.id = `turn-${state.dialogueHistory.length}`;
 
   const meta = document.createElement("div");
   meta.className = "msg-meta";
@@ -468,7 +761,7 @@ function appendChatBubble(role, content, speechText = null) {
     const audioBar = document.createElement("div");
     audioBar.className = "msg-bubble-audio";
     audioBar.innerHTML = `
-      <span>🔊 TTS Speech Generated</span>
+      <span>🔊 TTS Speech Synthesized</span>
       <button class="play-speech-btn">PLAY AGAIN</button>
     `;
     audioBar.querySelector(".play-speech-btn").addEventListener("click", () => {
@@ -481,6 +774,8 @@ function appendChatBubble(role, content, speechText = null) {
   row.appendChild(bubble);
   el.dialogueStream.appendChild(row);
   el.dialogueStream.scrollTop = el.dialogueStream.scrollHeight;
+
+  state.dialogueHistory.push({ role, content });
 }
 
 
@@ -542,7 +837,6 @@ function updateTriageHUD(data) {
     });
   }
 
-  // Update biomarker table if newly parsed
   if (data.extracted_biomarkers && data.extracted_biomarkers.length > 0) {
     renderBiomarkerTable(data.extracted_biomarkers);
   }
@@ -599,12 +893,12 @@ async function generateSOAPNote() {
       biomarkers: state.extractedBiomarkers,
       vitals: {
         blood_pressure: "152/94 mmHg",
-        heart_rate_bpm: 88,
+        heart_rate_bpm: state.heartRate,
         spo2_percent: 96,
         respiratory_rate: 22,
         temperature_c: 37.2
       },
-      telemetry_findings: "Telemetry shows sinus tachycardia with lead II ST segment elevation."
+      telemetry_findings: `Lead II Telemetry shows ${state.currentRhythm} with rate ${state.heartRate} bpm.`
     };
 
     const res = await fetch("/api/triage/soap", {
@@ -617,16 +911,235 @@ async function generateSOAPNote() {
     const note = await res.json();
     state.lastSoapNote = note;
 
-    // Render markdown
     if (typeof marked !== "undefined") {
       el.soapRenderedContent.innerHTML = marked.parse(note.markdown_formatted);
     } else {
       el.soapRenderedContent.innerText = note.markdown_formatted;
     }
 
+    // Automatically trigger grounding audit
+    auditLinkedEvidence();
+
   } catch (err) {
     console.error("SOAP note error:", err);
     alert("Error generating SOAP note: " + err.message);
+  }
+}
+
+
+// --- LINKED EVIDENCE AUDIT (ABRIDGE ARCHITECTURE) ---
+async function auditLinkedEvidence() {
+  if (!state.lastSoapNote) {
+    await generateSOAPNote();
+    if (!state.lastSoapNote) return;
+  }
+
+  try {
+    const res = await fetch("/api/triage/grounding", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        encounter_id: state.encounterId,
+        soap_note: state.lastSoapNote
+      })
+    });
+
+    if (!res.ok) throw new Error("Grounding audit failed");
+    const data = await res.json();
+
+    el.evidenceScoreBadge.textContent = `INTEGRITY ${data.grounding_integrity_percentage}%`;
+    el.evidenceScoreBadge.className = `calc-badge ${data.hallucination_risk_level === 'ZERO_DETECTED' ? 'risk-low' : 'risk-mod'}`;
+
+    el.evidenceListContainer.innerHTML = "";
+    data.anchors.forEach(a => {
+      const item = document.createElement("div");
+      item.style.background = "var(--bg-card)";
+      item.style.padding = "8px 10px";
+      item.style.borderRadius = "4px";
+      item.style.border = "1px solid var(--border-subtle)";
+      item.innerHTML = `
+        <div style="display: flex; justify-content: space-between; font-weight: 700; color: #fff; margin-bottom: 2px;">
+          <span style="color: var(--neon-cyan); font-family: var(--font-mono);">[${a.target_section}]</span>
+          <span style="font-size: 10px; color: var(--neon-green); font-family: var(--font-mono);">Score: ${Math.round(a.confidence_score * 100)}%</span>
+        </div>
+        <div style="font-size: 11px; color: #e2e8f0; margin-bottom: 4px;">${a.clinical_claim}</div>
+        <div style="font-size: 11px; color: var(--text-dim); font-style: italic; border-left: 2px solid var(--neon-cyan); padding-left: 6px;">
+          "${a.verbatim_transcript_quote}"
+        </div>
+      `;
+      el.evidenceListContainer.appendChild(item);
+    });
+
+  } catch (err) {
+    console.error("Grounding audit error:", err);
+  }
+}
+
+
+// --- CLINICAL CALCULATORS (HEART, Wells, qSOFA, GCS) ---
+async function runHeartScoreCalculation() {
+  try {
+    const payload = {
+      history_suspicion: parseInt(document.getElementById("heartHistory").value, 10),
+      ecg_finding: parseInt(document.getElementById("heartECG").value, 10),
+      age: parseInt(document.getElementById("heartAge").value, 10) || 62,
+      risk_factors: parseInt(document.getElementById("heartRisk").value, 10),
+      troponin_initial: parseInt(document.getElementById("heartTrop").value, 10)
+    };
+
+    const res = await fetch("/api/calculators/heart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("heartScoreBadge").textContent = `Score: ${data.total_score} / 10`;
+    const tag = document.getElementById("heartRiskTag");
+    tag.textContent = `${data.risk_category} (${data.total_score} pts)`;
+    tag.className = `calc-risk-tag ${data.total_score >= 7 ? 'risk-high' : (data.total_score >= 4 ? 'risk-mod' : 'risk-low')}`;
+    document.getElementById("heartExpText").textContent = `${data.mace_six_week_rate}. ${data.recommended_pathway}`;
+
+  } catch (err) {
+    console.error("HEART calc error:", err);
+  }
+}
+
+async function runWellsPECalculation() {
+  try {
+    const payload = {
+      clinical_signs_dvt: document.getElementById("wellsDVT").checked,
+      pe_most_likely_diagnosis: document.getElementById("wellsPEAlt").checked,
+      heart_rate_over_100: document.getElementById("wellsHR").checked,
+      immobilization_or_surgery_4w: document.getElementById("wellsImmob").checked,
+      previous_dvt_or_pe: document.getElementById("wellsPrior").checked,
+      hemoptysis: document.getElementById("wellsHemo").checked,
+      active_malignancy: document.getElementById("wellsMalign").checked
+    };
+
+    const res = await fetch("/api/calculators/wells-pe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("wellsScoreBadge").textContent = `Score: ${data.total_score}`;
+    const tag = document.getElementById("wellsRiskTag");
+    tag.textContent = `${data.pe_probability_two_tier} (${data.total_score} pts)`;
+    tag.className = `calc-risk-tag ${data.total_score > 4.0 ? 'risk-high' : 'risk-low'}`;
+    document.getElementById("wellsExpText").textContent = `${data.pe_probability_three_tier}. ${data.recommended_workup}`;
+
+  } catch (err) {
+    console.error("Wells calc error:", err);
+  }
+}
+
+async function runQsofaCalculation() {
+  try {
+    const payload = {
+      respiratory_rate: parseInt(document.getElementById("qsofaRR").value, 10) || 22,
+      systolic_bp: parseInt(document.getElementById("qsofaSBP").value, 10) || 95,
+      altered_mentation: document.getElementById("qsofaGCS").checked
+    };
+
+    const res = await fetch("/api/calculators/qsofa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("qsofaBadge").textContent = `Score: ${data.score} / 3`;
+    const tag = document.getElementById("qsofaRiskTag");
+    tag.textContent = `${data.sepsis_risk_category} (${data.score}/3)`;
+    tag.className = `calc-risk-tag ${data.score >= 2 ? 'risk-high' : 'risk-low'}`;
+    document.getElementById("qsofaExpText").textContent = `${data.in_hospital_mortality_alert} ${data.recommended_management}`;
+
+  } catch (err) {
+    console.error("qSOFA calc error:", err);
+  }
+}
+
+async function runGcsCalculation() {
+  try {
+    const payload = {
+      eye_opening: parseInt(document.getElementById("gcsEye").value, 10),
+      verbal_response: parseInt(document.getElementById("gcsVerbal").value, 10),
+      motor_response: parseInt(document.getElementById("gcsMotor").value, 10)
+    };
+
+    const res = await fetch("/api/calculators/gcs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("gcsBadge").textContent = `Score: ${data.total_score} / 15`;
+    const tag = document.getElementById("gcsRiskTag");
+    tag.textContent = `${data.tbi_severity} (${data.total_score}/15)`;
+    tag.className = `calc-risk-tag ${data.total_score <= 8 ? 'risk-high' : (data.total_score <= 12 ? 'risk-mod' : 'risk-low')}`;
+    document.getElementById("gcsExpText").textContent = `${data.clinical_risk} ${data.airway_compromise_risk ? '⚠️ High risk of acute airway compromise; intubation precautions indicated.' : ''}`;
+
+  } catch (err) {
+    console.error("GCS calc error:", err);
+  }
+}
+
+// --- RX SAFETY CHECKER ---
+async function runRxSafetyCheck() {
+  try {
+    const allergies = el.rxAllergiesInput.value.split(",").map(s => s.trim()).filter(Boolean);
+    const proposed = el.rxProposedInput.value.split(",").map(s => s.trim()).filter(Boolean);
+
+    const res = await fetch("/api/safety/rx-check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        patient_allergies: allergies,
+        current_medications: state.patientProfile.current_medications,
+        proposed_medications: proposed
+      })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    el.rxAlertsList.innerHTML = "";
+    if (data.alerts.length === 0) {
+      el.rxAlertsList.innerHTML = `
+        <div style="background: rgba(0, 229, 153, 0.1); border: 1px solid var(--neon-green); color: var(--neon-green); padding: 10px 14px; border-radius: 6px; font-size: 12px;">
+          ✓ All proposed medications cleared. No contraindications or cross-reactivity detected.
+        </div>
+      `;
+      return;
+    }
+
+    data.alerts.forEach(a => {
+      const card = document.createElement("div");
+      card.className = `rx-alert-card rx-alert-${a.severity}`;
+      card.innerHTML = `
+        <div class="rx-alert-header">
+          <span style="color: ${a.severity === 'CRITICAL_AVOID' ? 'var(--neon-red)' : 'var(--neon-amber)'};">
+            ${a.severity === 'CRITICAL_AVOID' ? '🚨 CRITICAL CONTRAINDICATION' : '⚠️ CROSS-REACTIVITY / INTERACTION'} — ${a.trigger_drug.toUpperCase()}
+          </span>
+          <span style="font-size: 11px; opacity: 0.8;">${a.alert_type}</span>
+        </div>
+        <div style="color: #fff;"><strong>Trigger:</strong> ${a.offending_factor}</div>
+        <div style="color: #cbd5e1; font-size: 11px;">${a.clinical_mechanism}</div>
+        <div style="color: var(--neon-green); font-size: 11px; margin-top: 2px;">
+          <strong>Safe Alternative:</strong> ${a.recommended_safe_alternative}
+        </div>
+      `;
+      el.rxAlertsList.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error("Rx check error:", err);
   }
 }
 
@@ -684,6 +1197,102 @@ function renderBiomarkerTable(biomarkers) {
     `;
     el.biomarkerTableBody.appendChild(tr);
   });
+}
+
+
+// --- PATIENT AFTER-VISIT SUMMARY (AVS) ---
+async function generatePatientAVS() {
+  if (!state.latestAssessment) {
+    alert("Conduct triage intake first.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/triage/avs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        encounter_id: state.encounterId,
+        patient_profile: state.patientProfile,
+        assessment: state.latestAssessment,
+        soap_note: state.lastSoapNote
+      })
+    });
+
+    if (!res.ok) throw new Error("AVS failed");
+    const avs = await res.json();
+    state.lastAvs = avs;
+
+    if (typeof marked !== "undefined") {
+      el.avsRenderedContent.innerHTML = marked.parse(avs.formatted_document_markdown);
+    } else {
+      el.avsRenderedContent.innerText = avs.formatted_document_markdown;
+    }
+
+  } catch (err) {
+    console.error("AVS generation error:", err);
+  }
+}
+
+function openPrintableChartModal() {
+  if (!state.latestAssessment) {
+    alert("Please conduct a clinical intake or load a scenario first.");
+    return;
+  }
+
+  const p = state.patientProfile;
+  const a = state.latestAssessment;
+  const note = state.lastSoapNote;
+
+  el.printableChartBody.innerHTML = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; line-height: 1.5; padding: 20px;">
+      <div style="border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <h1 style="font-size: 22px; margin: 0 0 4px 0; letter-spacing: -0.5px;">VAANI CLINICAL HEALTH SYSTEM</h1>
+          <div style="font-size: 13px; color: #555;">EMERGENCY TELEMEDICINE & CLINICAL TELEPHONY TRIAGE SERVICE</div>
+        </div>
+        <div style="text-align: right; font-size: 12px; font-family: monospace;">
+          <strong>ENCOUNTER ID:</strong> ${state.encounterId}<br>
+          <strong>DATE/TIME:</strong> ${new Date().toUTCString()}
+        </div>
+      </div>
+
+      <div style="background: #f4f6f8; border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 16px; display: grid; grid-template-columns: 2fr 1fr 1fr;">
+        <div><strong>Patient Name:</strong> ${p.name} | <strong>MRN:</strong> ${p.mrn}</div>
+        <div><strong>Age / Sex:</strong> ${p.age || 'Unspecified'} / ${p.biological_sex.toUpperCase()}</div>
+        <div><strong>Triage Rating:</strong> <span style="background: #000; color: #fff; padding: 2px 6px; font-size: 11px; font-weight: bold;">${a.triage_status}</span></div>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <h3 style="font-size: 15px; margin: 0 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 2px;">HISTORY OF PRESENT ILLNESS (OLD CARTS)</h3>
+        <p style="font-size: 13px; margin: 0 0 6px 0;"><strong>Chief Complaint:</strong> ${a.chief_complaint}</p>
+        <p style="font-size: 13px; margin: 0 0 6px 0;">
+          Onset: ${a.hpi.onset || 'Unspecified'} | Location: ${a.hpi.location || 'Unspecified'} | Duration: ${a.hpi.duration || 'Unspecified'}<br>
+          Character: ${a.hpi.character || 'Unspecified'} | Radiation: ${a.hpi.radiation || 'None'} | Pain Score: ${a.hpi.severity || '--'}/10
+        </p>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <h3 style="font-size: 15px; margin: 0 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 2px;">DIAGNOSTIC ASSESSMENT & ICD-10-CM</h3>
+        <p style="font-size: 13px; margin: 0 0 6px 0;">
+          <strong>Primary Working Diagnosis:</strong> ${a.differentials[0] ? a.differentials[0].condition_name : 'Acute Symptom Complex'} 
+          (ICD-10: <code>${a.differentials[0] ? a.differentials[0].icd10_code : 'R69'}</code>)
+        </p>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <h3 style="font-size: 15px; margin: 0 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 2px;">RECOMMENDED PLAN & DISPOSITION</h3>
+        <p style="font-size: 13px; margin: 0 0 6px 0;"><strong>Disposition:</strong> ${a.recommended_disposition}</p>
+      </div>
+
+      <div style="border-top: 1px dashed #999; padding-top: 10px; font-size: 11px; color: #666; display: flex; justify-content: space-between;">
+        <span>Document Electronically Signed via Vaani Clinical CDS Engine</span>
+        <span>HL7 FHIR Release 4 Compliant</span>
+      </div>
+    </div>
+  `;
+
+  el.chartModalOverlay.classList.add("active");
 }
 
 
@@ -763,13 +1372,20 @@ async function loadPresetScenarios() {
 }
 
 async function applyScenario(sc) {
-  // Update state
   state.encounterId = "ENC-" + Math.floor(10000 + Math.random() * 90000);
   state.patientProfile = sc.patient_profile;
   state.dialogueHistory = [];
   updatePatientHUD();
 
-  // Reset chat view
+  // If scenario is cardiac or asthma, update rhythm
+  if (sc.id === "scenario-stemi-cardiac") {
+    document.querySelector('[data-rhythm="STEMI"]').click();
+  } else if (sc.id === "scenario-asthma-bronchospasm") {
+    document.querySelector('[data-rhythm="TACHY"]').click();
+  } else if (sc.id === "scenario-stroke-fast") {
+    document.querySelector('[data-rhythm="NSR"]').click();
+  }
+
   el.dialogueStream.innerHTML = `
     <div class="msg-row agent">
       <div class="msg-meta">VAANI CLINICAL AI RECEPTIONIST • INTAKE</div>
@@ -780,24 +1396,21 @@ async function applyScenario(sc) {
     </div>
   `;
 
-  // Switch to Workspace 1
   document.querySelector('[data-target="workspace-triage"]').click();
 
-  // Send sample messages in sequence
   for (const msg of sc.sample_dialogue) {
     await sendPatientMessage(msg.content);
     await new Promise(r => setTimeout(r, 600));
   }
 
-  // If scenario has lab text, populate Biomarker Lab and extract
   if (sc.lab_text_snippet) {
     el.labInputText.value = sc.lab_text_snippet;
     await extractBiomarkersFromText(sc.lab_text_snippet);
   }
 
-  // Automatically synthesize SOAP and FHIR bundle for the scenario
   setTimeout(async () => {
     await generateSOAPNote();
+    await generatePatientAVS();
     await compileFHIRBundle();
   }, 800);
 }
