@@ -12,7 +12,7 @@ Resources included:
 import base64
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from backend.models import (
     PatientProfile,
     TriageAssessment,

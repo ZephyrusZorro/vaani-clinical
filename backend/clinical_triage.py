@@ -61,9 +61,12 @@ RED_FLAG_RULES = [
         "alert_code": "RF-NEURO-FAST-STROKE",
         "severity": "CRITICAL_EMERGENCY",
         "patterns": [
-            r"\b(facial|face)\s*(droop|slump|numbness|paralysis)\b",
-            r"\b(arm|leg|one side|hemiparesis)\s*(weakness|numbness|drift|cannot raise|can't lift)\b",
-            r"\b(slurred|slur|incoherent|cannot speak|garbled)\s*(speech|words|talk)\b",
+            r"\b(facial|face)\b.*?\b(droop|drooping|slump|numbness|paralysis)\b",
+            r"\b(droop|drooping|slump|numbness|paralysis)\b.*?\b(facial|face)\b",
+            r"\b(arm|leg|one side|hemiparesis)\b.*?\b(weakness|numbness|drift|cannot raise|can't lift|dead weight)\b",
+            r"\b(cannot raise|can't lift|weakness|numbness|drift)\b.*?\b(arm|leg)\b",
+            r"\b(slurred|slur|incoherent|cannot speak|garbled)\b.*?\b(speech|words|talk)\b",
+            r"\b(speech|words|talk)\b.*?\b(slurred|slur|incoherent|cannot speak|garbled)\b",
             r"\bsudden severe headache\b.*?\b(worst of my life|thunderclap)\b",
             r"\b(loss of vision|diplopia|double vision)\b.*?\bsudden\b"
         ],
@@ -95,8 +98,10 @@ RED_FLAG_RULES = [
         "alert_code": "RF-ANAPHYLAXIS",
         "severity": "CRITICAL_EMERGENCY",
         "patterns": [
-            r"\b(swollen|swelling)\b.*?\b(tongue|lip|throat|uvula|airway)\b",
+            r"\b(swollen|swelling|swell|tight|closing)\b.*?\b(tongue|lip|throat|uvula|airway)\b",
+            r"\b(tongue|lip|throat|uvula|airway)\b.*?\b(swollen|swelling|swell|tight|closing)\b",
             r"\b(wheezing|stridor|choking|gasping|cannot breathe)\b.*?\b(hive|rash|urticaria|sting|peanut|seafood)\b",
+            r"\b(hive|rash|urticaria|sting|peanut|seafood)\b.*?\b(wheezing|stridor|choking|gasping|cannot breathe)\b",
             r"\bhives\b.*?\b(throat tight|dizzy|passed out|syncope)\b"
         ],
         "risk": "Anaphylaxis / Severe Airway Compromise with Impending Respiratory Arrest",
@@ -293,8 +298,8 @@ class OLDCARTSExtractor:
     @staticmethod
     def extract_radiation(text: str) -> Optional[str]:
         patterns = [
-            (r"\b(radiat(?:es|ing)?|travel(?:s|ing)?|spread(?:s|ing)?)\s+(?:to|down|into)\s+(the\s+)?(left arm|arm|jaw|neck|back|scapula|teeth|shoulder)\b", "Left Arm / Jaw / Shoulder"),
-            (r"\b(shoots?|radiates?)\s+down\s+(the\s+)?(leg|sciatica)\b", "Lower Extremity"),
+            (r"\b(radiat(?:es|ing)?|travel(?:s|ing)?|spread(?:s|ing)?)\s+(?:to|down|into)\s+(?:the\s+|my\s+|one's\s+)?(left arm|arm|jaw|neck|back|scapula|teeth|shoulder)\b", "Left Arm / Jaw / Shoulder"),
+            (r"\b(shoots?|radiates?)\s+down\s+(?:the\s+|my\s+)?(leg|sciatica)\b", "Lower Extremity"),
             (r"\b(through to the back|interscapular)\b", "Interscapular / Back")
         ]
         for pattern, label in patterns:
@@ -418,7 +423,20 @@ class ClinicalTriageEngine:
 
         # If no severe red flag triggered, evaluate routine / urgent scenarios
         if not active_alerts:
-            if re.search(r"\b(fever|chills|temperature|cough|sore throat)\b", full_dialogue_text, re.IGNORECASE):
+            # Check if presentation is explicitly mild/routine or denies fever
+            has_denied_fever = bool(re.search(r"\b(no|denies|without)\s+fever\b", full_dialogue_text, re.IGNORECASE))
+            has_fever = bool(re.search(r"\b(fever|chills|high temp)\b", full_dialogue_text, re.IGNORECASE)) and not has_denied_fever
+            is_mild = bool(re.search(r"\b(mild|slight|scratchy throat|runny nose|cold|congestion)\b", full_dialogue_text, re.IGNORECASE))
+
+            if is_mild and not has_fever:
+                min_esi = 4
+                differentials.append(DifferentialDiagnosis(
+                    condition_name="Mild Upper Respiratory Tract Symptoms / Rhinovirus",
+                    icd10_code="J00",
+                    probability="High",
+                    justification="Mild localized symptoms without fever, respiratory distress, or systemic toxemia."
+                ))
+            elif has_fever or re.search(r"\b(chills|temperature|cough|sore throat)\b", full_dialogue_text, re.IGNORECASE):
                 min_esi = 3
                 differentials.append(DifferentialDiagnosis(
                     condition_name="Upper Respiratory Infection / Viral Syndrome",
