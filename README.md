@@ -1,4 +1,4 @@
-# Vaani Clinical (वाणी) — Real-Time Clinical Voice Receptionist & Medical Triage Intelligence
+# Vaani Clinical (वाणी) — Clinical Intake and Documentation Simulation
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Vaani (वाणी)** — Sanskrit/Hindi for *Voice*, *Speech*, or *The Spoken Word*.  
-> A real-time clinical telephony receptionist, conversational triage copilot, and automated electronic health record (EHR) synthesis platform.
+> An educational simulation for guided clinical intake, illustrative decision support, SOAP notes and FHIR R4 export.
 
 ---
 
@@ -240,7 +240,7 @@ tests/test_triage.py::test_process_triage_turn PASSED
 ---
 
 ## ⚖️ Clinical Disclaimer
-*Vaani Clinical is designed for clinical research, medical education, and telephony triage augmentation. It demonstrates conversational state modeling, algorithmic rule-out safety, clinical decision calculation, and HL7 FHIR v4 interoperability. It does not replace direct clinical judgment by a licensed physician or emergency medical provider.*
+*Vaani Clinical uses synthetic cases to demonstrate conversational state, illustrative decision rules and FHIR R4 bundle export.*
 
 ## Browser verification
 
